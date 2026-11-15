@@ -528,6 +528,39 @@
         .pairs li { font-size: 1rem; font-weight: 900; color: #312e81; line-height: 1.25; }
 
         /* ---------- End ---------- */
+        /* ---------- Discussion topics ---------- */
+        .mode-pick { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .mode-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+            font-family: inherit; font-size: 1.3rem; font-weight: 900;
+            background: #fff; color: #000;
+            border: 3px solid #000; border-radius: 1.25rem; box-shadow: 0 6px 0 #000;
+            padding: 0.8rem 1.6rem; cursor: pointer; min-width: 15rem;
+        }
+        .mode-btn small { font-size: 0.85rem; font-weight: 700; color: #475569; }
+        .mode-btn[aria-checked="true"] { background: #000; color: #fde047; transform: translateY(3px); box-shadow: 0 3px 0 #000; }
+        .mode-btn[aria-checked="true"] small { color: #e5e7eb; }
+        .mode-btn:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
+        .now {
+            text-align: center; font-size: clamp(1.4rem, 3.5vw, 2.4rem); font-weight: 900;
+            background: #fef9c3; border: 3px dashed #000; border-radius: 1.5rem;
+            padding: 1rem; margin-bottom: 1.5rem; color: #6b7280;
+        }
+        .now.live { background: #a3e635; border-style: solid; color: #000; }
+        .now.hidden-topic { background: #1e1b4b; color: #fde047; border-style: solid; }
+        .topic-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; }
+        .topic-btn {
+            font-family: inherit; font-size: 1.15rem; font-weight: 900; text-align: left;
+            background: #fff; color: #000; border: 3px solid #000; border-radius: 1rem;
+            box-shadow: 0 5px 0 #000; padding: 0.9rem 1rem; cursor: pointer;
+        }
+        .topic-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #000; }
+        .topic-btn.sent { background: #e5e7eb; color: #6b7280; }
+        .topic-btn.sent::after { content: " ✓ sent"; font-size: 0.85rem; }
+        .shuffle-box { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+        .shuffle-box .teams-note { margin: 0.75rem 0 0; }
+        .topic-list[hidden], .shuffle-box[hidden] { display: none; }
+
         /* ---------- Teams ---------- */
         .teams-note { margin: -0.75rem 0 1.5rem; text-align: center; font-weight: 700; font-size: 1.15rem; color: #475569; }
         .teams { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 1.25rem; }
@@ -651,6 +684,29 @@
             <div class="teams-actions">
                 <button class="btn-small" id="teams-shuffle">↻ Shuffle teams</button>
                 <button class="btn-go" id="teams-next">Next step →</button>
+            </div>
+        </section>
+
+        <!-- SCREEN 4c: DISCUSSION TOPICS (Planning) -->
+        <section id="screen-topics" class="screen" hidden>
+            <div class="top-bar">
+                <button class="back-btn" data-go="teams">← Go back</button>
+                <span class="step-tag" data-scenario-name></span>
+            </div>
+            <h2 class="prep-title">Discussion topics</h2>
+            <div class="mode-pick" role="radiogroup" aria-label="How to send topics">
+                <button class="mode-btn" role="radio" aria-checked="true" data-mode="manual">👆 Teacher picks<small>Everyone sees the topic</small></button>
+                <button class="mode-btn" role="radio" aria-checked="false" data-mode="shuffle">🔀 Shuffle<small>Topic shows only on phones</small></button>
+            </div>
+            <div class="now" id="topic-now">No topic sent yet</div>
+            <div id="topics-manual" class="topic-list"></div>
+            <div id="topics-shuffle" class="shuffle-box" hidden>
+                <button class="btn-go" id="topic-shuffle">🔀 Shuffle and send</button>
+                <p class="teams-note" id="shuffle-left"></p>
+            </div>
+            <div class="teams-actions">
+                <span></span>
+                <button class="btn-go" id="topics-next">Next step →</button>
             </div>
         </section>
 
@@ -1220,7 +1276,82 @@
             list.classList.remove('shuffled'); void list.offsetWidth; list.classList.add('shuffled');
             showToast('Teams shuffled!');
         };
-        document.getElementById('teams-next').onclick = () => showToast('Next screens: coming soon!');
+        document.getElementById('teams-next').onclick = () => { buildTopics(); goTo('topics'); };
+
+        // ---------- Discussion topics (Planning) ----------
+        // From MATRIX_Planning_Discussions.xlsx: [A1–A2 prompt, B1+ prompt, plans where it fits (1/0, in PLANS order)]
+        const TOPICS = [
+            ["Where and when", "Location, venue and schedule",   [1,1,1,1,1,1,1,1,1,1,1,1,1]],
+            ["Clothes", "Attire / dress code",                    [1,1,1,1,1,1,1,1,0,0,0,0,1]],
+            ["Food and drinks", "Catering and menu",              [1,1,1,1,1,1,1,1,1,1,0,0,1]],
+            ["How do we go?", "Transportation and logistics",     [1,1,1,1,1,1,1,0,1,0,1,0,1]],
+            ["How much money?", "Budget and expenses",            [1,1,1,1,1,1,1,1,1,1,1,1,1]],
+            ["Decoration", "Theme and decor",                     [0,0,1,0,0,0,1,1,0,1,0,0,1]],
+            ["Music", "Entertainment and playlist",               [1,1,1,1,0,0,1,1,0,1,0,0,1]],
+            ["Who comes?", "Guest list and invitations",          [1,1,1,0,1,1,1,1,0,1,1,1,1]],
+            ["Who does what?", "Roles and responsibilities",      [0,1,1,0,1,1,1,1,0,1,1,1,1]],
+            ["What do we do?", "Agenda and itinerary",            [1,1,1,1,1,1,1,1,1,1,1,1,1]],
+            ["What if it rains?", "Contingency plan (plan B)",    [1,1,1,1,1,1,1,1,1,1,1,1,1]],
+            ["What do we need?", "Supplies and equipment",        [0,1,1,0,1,1,1,1,0,1,1,1,1]]
+        ];
+        let topicMode = 'manual';
+        let topicsAvailable = [];
+        let topicsSent = [];
+
+        function buildTopics() {
+            const planIndex = PLANS.indexOf(state.scenario);
+            const level = state.level === 'A1–A2' ? 0 : 1;
+            topicsAvailable = TOPICS.filter(t => t[2][planIndex]).map(t => t[level]);
+            topicsSent = [];
+            const list = document.getElementById('topics-manual');
+            list.innerHTML = '';
+            topicsAvailable.forEach(topic => {
+                const btn = document.createElement('button');
+                btn.className = 'topic-btn';
+                btn.textContent = topic;
+                btn.onclick = () => sendTopic(topic, true);
+                list.appendChild(btn);
+            });
+            const now = document.getElementById('topic-now');
+            now.className = 'now';
+            now.textContent = 'No topic sent yet';
+            updateShuffleLeft();
+        }
+
+        // Sends the topic to every phone. visible = also shown on this (projected) screen.
+        function sendTopic(topic, visible) {
+            if (!topicsSent.includes(topic)) topicsSent.push(topic);
+            const now = document.getElementById('topic-now');
+            if (visible) {
+                now.className = 'now live';
+                now.textContent = 'Now discussing: ' + topic;
+            } else {
+                now.className = 'now hidden-topic';
+                now.textContent = '🤫 Topic ' + topicsSent.length + ' sent — check your phone!';
+            }
+            document.querySelectorAll('.topic-btn').forEach(b => b.classList.toggle('sent', topicsSent.includes(b.textContent)));
+            updateShuffleLeft();
+            showToast('Sent to all phones', true);
+        }
+
+        function updateShuffleLeft() {
+            const left = topicsAvailable.filter(t => !topicsSent.includes(t)).length;
+            document.getElementById('shuffle-left').textContent = left + ' of ' + topicsAvailable.length + ' topics left';
+            document.getElementById('topic-shuffle').disabled = left === 0;
+        }
+
+        document.getElementById('topic-shuffle').onclick = () => {
+            const left = topicsAvailable.filter(t => !topicsSent.includes(t));
+            if (left.length) sendTopic(left[Math.floor(Math.random() * left.length)], false);
+        };
+        document.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => {
+            document.querySelectorAll('.mode-btn').forEach(b => b.setAttribute('aria-checked', 'false'));
+            btn.setAttribute('aria-checked', 'true');
+            topicMode = btn.dataset.mode;
+            document.getElementById('topics-manual').hidden = topicMode !== 'manual';
+            document.getElementById('topics-shuffle').hidden = topicMode !== 'shuffle';
+        });
+        document.getElementById('topics-next').onclick = () => showToast('Next screens: coming soon!');
 
         // ---------- Rounds: one per screen ----------
 
