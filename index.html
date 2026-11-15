@@ -46,11 +46,11 @@
             text-align: center;
         }
 
-        /* Activity grid: 5 columns on laptops, 3 on tablets, 2 on phones */
+        /* Cluster grid: 4 columns on laptops, 3 on tablets, 2 on phones */
         .grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 1rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem 1rem;
             width: 100%;
             max-width: 72rem;
         }
@@ -58,6 +58,53 @@
         @media (max-width: 560px)  { .grid { grid-template-columns: repeat(2, 1fr); } }
 
         .card { position: relative; }
+
+        /* Cluster button: shows a small arrow and stays "pressed" while open */
+        .btn-cluster .arrow {
+            display: inline-block;
+            margin-left: 0.4rem;
+            font-size: 0.8em;
+            transition: transform 0.15s ease-in-out;
+        }
+        .btn-cluster[aria-expanded="true"] {
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #000;
+        }
+        .btn-cluster[aria-expanded="true"] .arrow { transform: rotate(180deg); }
+
+        /* Panel with the activities of the open cluster; spans the full row below it */
+        .panel {
+            grid-column: 1 / -1;
+            position: relative;
+            border: 3px solid #000;
+            border-radius: 1.5rem;
+            box-shadow: 6px 6px 0 #000;
+            padding: 1.25rem 1.25rem 1.5rem;
+            background: color-mix(in srgb, var(--panel-color, #fff) 22%, #fff);
+        }
+        .panel[hidden] { display: none; }
+        /* Tail pointing up at the open cluster; its left offset is set from JS */
+        .panel::before, .panel::after {
+            content: "";
+            position: absolute;
+            left: var(--tail-x, 50%);
+            transform: translateX(-50%);
+            border: 12px solid transparent;
+        }
+        .panel::before { top: -27px; border-bottom-color: #000; }
+        .panel::after  { top: -21px; border-bottom-color: color-mix(in srgb, var(--panel-color, #fff) 22%, #fff); }
+        .panel h2 {
+            margin: 0 0 1rem;
+            font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+            font-weight: 900;
+        }
+        .panel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+            gap: 1.25rem 1rem;
+        }
+        @media (max-width: 560px) { .panel-grid { grid-template-columns: 1fr 1fr; } }
+        .btn-activity { font-size: clamp(1rem, 1.8vw, 1.3rem); padding: 1.1rem 0.8rem; }
 
         .btn-main {
             width: 100%;
@@ -123,6 +170,8 @@
 
         .bubble h2 { margin: 0 0 0.4rem; font-size: 1.35rem; font-weight: 900; }
         .bubble p  { margin: 0 0 0.75rem; font-size: 1.05rem; line-height: 1.4; }
+        .bubble .cluster-tag { margin: 0 0 0.15rem; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; }
+        .bubble ul { margin: -0.25rem 0 0.75rem; padding-left: 1.2rem; font-size: 0.95rem; line-height: 1.35; }
         .bubble .level {
             display: inline-block;
             font-weight: 900;
@@ -183,44 +232,67 @@
     <div id="toast" class="toast" role="status"></div>
 
     <script>
-        // Bubble texts and suggested CEFR levels come from
-        // "Definición Actividades_SPC_Homepage - burbujas.docx" (Claudio, 2026-10-28).
-        const ACTIVITIES = [
-            { name: "Role-play", color: "#facc15", available: true, level: "B–C",
-              text: "Students take on specific roles and act out simulated scenes or situations." },
-            { name: "Debate", color: "#f472b6", level: "B–C",
-              text: "A formal activity where teams defend opposing views on a controversial topic: first they plan as a team, then they interact with the other team." },
-            { name: "Questionnaires", color: "#4ade80", level: "A+",
-              text: "Students design or complete surveys to collect information from their classmates." },
-            { name: "Dice", color: "#fb923c", level: "A+",
-              text: "Rolling dice adds chance to speaking practice: the roll decides the topic to discuss or the grammar structure to use." },
-            { name: "True/False", color: "#c084fc", level: "B–C",
-              text: "Students hear or read statements and decide if they are true or false, asking questions and/or justifying their answer." },
-            { name: "Interview", color: "#22d3ee", level: "A+",
-              text: "One student gets specific information from another through prepared or spontaneous questions, in a given context." },
-            { name: "Ranking", color: "#f87171", level: "A+",
-              text: "A discussion where students put a list of items in order of importance or preference." },
-            { name: "Problem Solv.", fullName: "Problem Solving", color: "#a3e635", level: "B–C",
-              text: "Students work together to find a solution to a dilemma or a hypothetical situation." },
-            { name: "Drawing", color: "#fbbf24", level: "A+",
-              text: "Students draw from spoken instructions, or describe a picture for others to draw (\"describe and draw\")." },
-            { name: "Jigsaw", color: "#2dd4bf", level: "A+",
-              text: "A cooperative task where each student holds one piece of the information needed to complete it." },
-            { name: "I'd rather", color: "#818cf8", level: "B–C",
-              text: "Students express and explain their preferences between two options." },
-            { name: "Guessing", color: "#34d399", level: "A+",
-              text: "Students identify a person, object, word or situation through clues or yes/no questions." },
-            { name: "Discussion", color: "#38bdf8", level: "B–C",
-              text: "An exchange of ideas on a specific topic, in small groups or with the whole class." },
-            { name: "T/F Trivia", color: "#fb7185", level: "B–C",
-              text: "Students receive a statement about world issues, and they have to discuss and vote as a team whether it is true or false before time runs out." },
+        // Clusters, activities, CEFR levels and bubble texts come from
+        // "Definición Actividades_SPC_Homepage - ESTRUCTURA.docx" (Claudio, 2026-11-15).
+        // Set available: true on an activity once its next screen exists.
+        const CLUSTERS = [
+            { name: "Interview", color: "#22d3ee", activities: [
+                { name: "Prepared", level: "A2–B1",
+                  text: "Students are given the purpose of the interview, and are given time to prepare questions." },
+                { name: "Spontaneous", level: "B1+",
+                  text: "Students are given the purpose of the interview, and are prompted with a sequence of different aspects of that context." }
+            ]},
+            { name: "True/False", color: "#c084fc", activities: [
+                { name: "Trivia", level: "B1+",
+                  text: "Students are given true or false world facts, and a text with a justification. The others have turns and time to make questions. Then vote to decide. Points are given to the ones who get it right, or the fact reader if no one gets it." },
+                { name: "Hot seat", level: "A2+",
+                  text: "One student makes a short statement and the class asks as many questions as possible. The others have turns and time to make questions. Then vote to decide. Points are given to the ones who get it right, or the fact reader if no one gets it." },
+                { name: "Truth and lies", level: "A2+",
+                  text: "Each group tells three stories, only one true; the class asks questions to find it. Then vote to decide. Points are given to the ones who get it right, or the fact reader if no one gets it." }
+            ]},
+            { name: "Pictures", color: "#fbbf24", activities: [
+                { name: "Differences", level: "A1+",
+                  text: "Pairs have two similar pictures and find the differences without looking at each other's. They speak them into their mics to show them on the teacher's console.",
+                  notes: ["Pictures change in a sequence."] },
+                { name: "Description", level: "A1+",
+                  text: "Teams say as many sentences as they can about a picture in two minutes. They speak them into their mics to show them on the teacher's console.",
+                  notes: ["Pictures change in a sequence."] }
+            ]},
+            { name: "Discussion", color: "#38bdf8", activities: [
+                { name: "Things in common", level: "A1+",
+                  text: "Pairs talk to discover as many things in common as they can." },
+                { name: "I'd rather", level: "A2+",
+                  text: "Students express and explain their preferences between two options.",
+                  notes: ["Teachers can enter options or use bank."] },
+                { name: "Debate", level: "B1+",
+                  text: "A formal activity where teams defend opposing views on a controversial topic: first they plan as a team, then they interact with the other team." },
+                { name: "Giving Opinions", level: "B1+",
+                  text: "An exchange of ideas on specific prompts (topics, statements, questions, etc.) in small groups or with the whole class.",
+                  notes: ["A moderator role is optional."] }
+            ]},
+            { name: "Problem Solving", color: "#a3e635", activities: [
+                { name: "Decision making", level: "B1+",
+                  text: "Students work together to find a solution to a dilemma or a hypothetical situation." },
+                { name: "Ranking", level: "A1+",
+                  text: "A discussion where students put a list of items in order of importance or preference." },
+                { name: "Planning", level: "B1+",
+                  text: "Groups plan something together, such as a holiday on a budget." },
+                { name: "Item selection", level: "A2+",
+                  text: "Students choose a limited number of items from a list and justify their choice." }
+            ]},
+            { name: "Story telling", color: "#f472b6", activities: [
+                { name: "Hero's Journey", level: "B1+",
+                  text: "Students are prompted on the creation of a story stage by stage." }
+            ]},
+            // Fake door: more clusters later
             { name: "More...", color: "#fef08a" }
         ];
 
         const grid = document.getElementById('activity-grid');
         const bubble = document.getElementById('bubble');
         const toast = document.getElementById('toast');
-        let openCard = null;
+        let openCard = null;      // activity card whose bubble is open
+        let openCluster = null;   // index of the open cluster
         let hideTimer = null;
         let toastTimer = null;
 
@@ -231,12 +303,27 @@
             toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
         }
 
-        function fillBubble(activity) {
+        // ---------- Bubbles (one per specific activity) ----------
+
+        function fillBubble(cluster, activity) {
             bubble.innerHTML = '';
+            const tag = document.createElement('p');
+            tag.className = 'cluster-tag';
+            tag.textContent = cluster.name;
             const title = document.createElement('h2');
-            title.textContent = activity.fullName || activity.name;
+            title.textContent = activity.name;
             const text = document.createElement('p');
             text.textContent = activity.text;
+            bubble.append(tag, title, text);
+            if (activity.notes) {
+                const list = document.createElement('ul');
+                activity.notes.forEach(n => {
+                    const li = document.createElement('li');
+                    li.textContent = n;
+                    list.appendChild(li);
+                });
+                bubble.appendChild(list);
+            }
             const level = document.createElement('div');
             level.className = 'level';
             level.textContent = 'Suggested CEFR level: ' + activity.level;
@@ -245,7 +332,7 @@
             tutorial.className = 'tutorial-btn';
             tutorial.innerHTML = '<span aria-hidden="true">▶</span> Quick tutorial';
             tutorial.onclick = () => showToast('Video tutorial coming soon!');
-            bubble.append(title, text, level, tutorial);
+            bubble.append(level, tutorial);
         }
 
         function positionBubble(card) {
@@ -267,9 +354,9 @@
             bubble.style.setProperty('--tail-x', (r.left + r.width / 2 - left) + 'px');
         }
 
-        function openBubble(card, activity) {
+        function openBubble(card, cluster, activity) {
             clearTimeout(hideTimer);
-            fillBubble(activity);
+            fillBubble(cluster, activity);
             bubble.classList.add('open');
             positionBubble(card);
             openCard = card;
@@ -285,13 +372,13 @@
             hideTimer = setTimeout(closeBubble, 200);
         }
 
-        ACTIVITIES.forEach(activity => {
+        function makeActivityCard(cluster, activity) {
             const card = document.createElement('div');
             card.className = 'card';
 
             const btn = document.createElement('button');
-            btn.className = 'btn-main';
-            btn.style.backgroundColor = activity.color;
+            btn.className = 'btn-main btn-activity';
+            btn.style.backgroundColor = cluster.color;
             btn.textContent = activity.name;
             btn.onclick = () => {
                 if (activity.available) showToast('Next step: the Scenarios screen (in progress).');
@@ -299,29 +386,97 @@
             };
             card.appendChild(btn);
 
-            if (activity.text) {
-                const info = document.createElement('button');
-                info.className = 'info-btn';
-                info.textContent = 'i';
-                info.setAttribute('aria-label', 'About ' + (activity.fullName || activity.name));
-                info.onclick = (e) => {
-                    e.stopPropagation();
-                    if (openCard === card) closeBubble();
-                    else openBubble(card, activity);
-                };
-                card.appendChild(info);
+            const info = document.createElement('button');
+            info.className = 'info-btn';
+            info.textContent = 'i';
+            info.setAttribute('aria-label', 'About ' + activity.name);
+            info.onclick = (e) => {
+                e.stopPropagation();
+                if (openCard === card) closeBubble();
+                else openBubble(card, cluster, activity);
+            };
+            card.appendChild(info);
 
-                // Mouse: open on hover. Keyboard: open on focus.
-                card.addEventListener('pointerenter', (e) => {
-                    if (e.pointerType !== 'touch') openBubble(card, activity);
-                });
-                card.addEventListener('pointerleave', (e) => { if (e.pointerType !== 'touch') closeSoon(); });
-                btn.addEventListener('focus', () => openBubble(card, activity));
-                btn.addEventListener('blur', closeSoon);
+            // Mouse: open on hover. Keyboard: open on focus.
+            card.addEventListener('pointerenter', (e) => {
+                if (e.pointerType !== 'touch') openBubble(card, cluster, activity);
+            });
+            card.addEventListener('pointerleave', (e) => { if (e.pointerType !== 'touch') closeSoon(); });
+            btn.addEventListener('focus', () => openBubble(card, cluster, activity));
+            btn.addEventListener('blur', closeSoon);
+            return card;
+        }
+
+        // ---------- Clusters (each one unfolds its activities) ----------
+
+        const panel = document.createElement('section');
+        panel.className = 'panel';
+        panel.id = 'cluster-panel';
+        panel.hidden = true;
+        const clusterCards = [];
+
+        // Put the panel right after the row that holds the open cluster
+        function placePanel() {
+            if (openCluster === null) return;
+            const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+            const rowEnd = Math.min(Math.floor(openCluster / cols) * cols + cols - 1, clusterCards.length - 1);
+            clusterCards[rowEnd].after(panel);
+            const r = clusterCards[openCluster].getBoundingClientRect();
+            const p = grid.getBoundingClientRect();
+            panel.style.setProperty('--tail-x', (r.left + r.width / 2 - p.left) + 'px');
+        }
+
+        function closeCluster() {
+            if (openCluster === null) return;
+            clusterCards[openCluster].querySelector('button').setAttribute('aria-expanded', 'false');
+            panel.hidden = true;
+            openCluster = null;
+            closeBubble();
+        }
+
+        function openClusterAt(i) {
+            closeCluster();
+            const cluster = CLUSTERS[i];
+            openCluster = i;
+            clusterCards[i].querySelector('button').setAttribute('aria-expanded', 'true');
+
+            panel.innerHTML = '';
+            panel.style.setProperty('--panel-color', cluster.color);
+            panel.setAttribute('aria-label', cluster.name + ' activities');
+            const heading = document.createElement('h2');
+            heading.textContent = cluster.name + ': choose an activity';
+            const list = document.createElement('div');
+            list.className = 'panel-grid';
+            cluster.activities.forEach(a => list.appendChild(makeActivityCard(cluster, a)));
+            panel.append(heading, list);
+            panel.hidden = false;
+            placePanel();
+        }
+
+        CLUSTERS.forEach((cluster, i) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            const btn = document.createElement('button');
+            btn.className = 'btn-main btn-cluster';
+            btn.style.backgroundColor = cluster.color;
+            btn.textContent = cluster.name;
+            if (cluster.activities) {
+                const arrow = document.createElement('span');
+                arrow.className = 'arrow';
+                arrow.setAttribute('aria-hidden', 'true');
+                arrow.textContent = '▼';
+                btn.appendChild(arrow);
+                btn.setAttribute('aria-expanded', 'false');
+                btn.setAttribute('aria-controls', 'cluster-panel');
+                btn.onclick = () => { if (openCluster === i) closeCluster(); else openClusterAt(i); };
+            } else {
+                btn.onclick = () => showToast('Coming soon!');
             }
-
+            card.appendChild(btn);
             grid.appendChild(card);
+            clusterCards.push(card);
         });
+        grid.appendChild(panel);
 
         // Keep the bubble open while the mouse is over it (to reach the tutorial button)
         bubble.addEventListener('mouseenter', () => clearTimeout(hideTimer));
@@ -331,8 +486,21 @@
         document.addEventListener('click', (e) => {
             if (openCard && !bubble.contains(e.target) && !openCard.contains(e.target)) closeBubble();
         });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeBubble(); });
-        window.addEventListener('resize', () => { if (openCard) positionBubble(openCard); });
+        // Escape closes the bubble first, then the open cluster
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (openCard) closeBubble();
+            else if (openCluster !== null) {
+                const btn = clusterCards[openCluster].querySelector('button');
+                closeCluster();
+                btn.focus();
+            }
+        });
+        window.addEventListener('resize', () => {
+            placePanel();
+            if (openCard) positionBubble(openCard);
+        });
     </script>
+
 </body>
 </html>
