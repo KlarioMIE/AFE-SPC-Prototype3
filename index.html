@@ -524,7 +524,7 @@
             </div>
             <div class="scenarios">
                 <div>
-                    <h2 class="screen-title">Choose a scenario</h2>
+                    <h2 class="screen-title" id="choices-title">Choose a scenario</h2>
                     <div id="scenario-list" class="scenario-list"></div>
                 </div>
                 <!-- Topic on top, scenario image in the middle, button at the bottom -->
@@ -532,9 +532,9 @@
                     <p id="scenario-chosen">Choose a scenario to proceed</p>
                     <div class="scenario-image" id="scenario-image" hidden>
                         <img id="scenario-img" alt="" hidden>
-                        <span id="scenario-img-placeholder">Scenario image</span>
+                        <span id="scenario-img-placeholder">Image</span>
                     </div>
-                    <button class="btn-go" id="scenario-next" data-go="setup" hidden>Next step →</button>
+                    <button class="btn-go" id="scenario-next" hidden>Next step →</button>
                 </div>
             </div>
         </section>
@@ -652,7 +652,7 @@
                   text: "Students work together to find a solution to a dilemma or a hypothetical situation." },
                 { name: "Ranking", level: "A1+",
                   text: "A discussion where students put a list of items in order of importance or preference." },
-                { name: "Planning", level: "B1+",
+                { name: "Planning", level: "B1+", available: true,
                   text: "Groups plan something together, such as a holiday on a budget." },
                 { name: "Item selection", level: "A2+",
                   text: "Students choose a limited number of items from a list and justify their choice." }
@@ -665,7 +665,7 @@
             { name: "More...", color: "#fef08a" }
         ];
 
-        // Scenario images: add "Scenario name": "image URL" when the images are ready
+        // Scenario and plan images: add "Scenario name": "image URL" when the images are ready
         const SCENARIO_IMAGES = {};
         const SCENARIOS = [
             "Graduate Study Fair", "Street Market", "Hotel", "City Tour", "The Neighborhood",
@@ -850,6 +850,7 @@
                     state.activity = activity;
                     state.cluster = cluster;
                     document.getElementById('scenarios-tag').textContent = cluster.name + ' › ' + activity.name;
+                    renderChoices(activity.name);
                     goTo('scenarios');
                 } else showToast('Coming soon!');
             };
@@ -941,33 +942,59 @@
 
         // ---------- Scenarios ----------
 
+        // Plans for Problem Solving › Planning (Claudio, 2026-11-15)
+        const PLANS = ["A night out", "A trip out of town", "A family gathering", "A date", "A sports activity"];
+
+        // First screen of each activity that has one: a list to choose from.
+        // next: the screen that follows; null = not built yet (fake door).
+        const CHOICES = {
+            "Role-play": { title: "Choose a scenario", empty: "Choose a scenario to proceed", label: "Topic", list: SCENARIOS, next: 'setup' },
+            "Planning":  { title: "Choose a plan",     empty: "Choose a plan to proceed",     label: "Plan",  list: PLANS,     next: null }
+        };
+
         const scenarioList = document.getElementById('scenario-list');
         const scenarioChosen = document.getElementById('scenario-chosen');
         const scenarioNext = document.getElementById('scenario-next');
-        SCENARIOS.forEach(sc => {
-            const row = document.createElement('div');
-            row.className = 'scenario-row';
-            const btn = document.createElement('button');
-            btn.className = 'scenario-item';
-            btn.textContent = sc;
-            btn.setAttribute('aria-pressed', 'false');
-            btn.onclick = () => {
-                scenarioList.querySelectorAll('.scenario-item').forEach(b => b.setAttribute('aria-pressed', 'false'));
-                btn.setAttribute('aria-pressed', 'true');
-                state.scenario = sc;
-                scenarioChosen.textContent = 'Topic: ' + sc;
-                scenarioChosen.classList.add('chosen');
-                scenarioNext.hidden = false;
-                const img = document.getElementById('scenario-img');
-                const src = SCENARIO_IMAGES[sc];
-                document.getElementById('scenario-image').hidden = false;
-                img.hidden = !src;
-                document.getElementById('scenario-img-placeholder').hidden = !!src;
-                if (src) { img.src = src; img.alt = sc; }
-            };
-            row.appendChild(btn);
-            scenarioList.appendChild(row);
-        });
+        let currentChoices = null;
+
+        function renderChoices(activityName) {
+            currentChoices = CHOICES[activityName];
+            state.scenario = null;
+            document.getElementById('choices-title').textContent = currentChoices.title;
+            scenarioChosen.textContent = currentChoices.empty;
+            scenarioChosen.classList.remove('chosen');
+            scenarioNext.hidden = true;
+            document.getElementById('scenario-image').hidden = true;
+            scenarioList.innerHTML = '';
+            currentChoices.list.forEach(sc => {
+                const row = document.createElement('div');
+                row.className = 'scenario-row';
+                const btn = document.createElement('button');
+                btn.className = 'scenario-item';
+                btn.textContent = sc;
+                btn.setAttribute('aria-pressed', 'false');
+                btn.onclick = () => {
+                    scenarioList.querySelectorAll('.scenario-item').forEach(b => b.setAttribute('aria-pressed', 'false'));
+                    btn.setAttribute('aria-pressed', 'true');
+                    state.scenario = sc;
+                    scenarioChosen.textContent = currentChoices.label + ': ' + sc;
+                    scenarioChosen.classList.add('chosen');
+                    scenarioNext.hidden = false;
+                    const img = document.getElementById('scenario-img');
+                    const src = SCENARIO_IMAGES[sc];
+                    document.getElementById('scenario-image').hidden = false;
+                    img.hidden = !src;
+                    document.getElementById('scenario-img-placeholder').hidden = !!src;
+                    if (src) { img.src = src; img.alt = sc; }
+                };
+                row.appendChild(btn);
+                scenarioList.appendChild(row);
+            });
+        }
+        scenarioNext.onclick = () => {
+            if (currentChoices.next) goTo(currentChoices.next);
+            else showToast('Next screens: coming soon!');
+        };
 
         // ---------- Class size and groups ----------
 
