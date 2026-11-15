@@ -392,6 +392,24 @@
             cursor: pointer;
         }
         .btn-enter:active { transform: translateY(3px); box-shadow: 0 3px 0 #000; }
+        .level-pick { display: flex; flex-direction: column; gap: 0.9rem; }
+        .level-options { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .level-btn {
+            font-family: inherit;
+            font-size: 1.6rem;
+            font-weight: 900;
+            min-width: 8rem;
+            background: #fff;
+            color: #000;
+            border: 3px solid #000;
+            border-radius: 1.25rem;
+            box-shadow: 0 6px 0 #000;
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+        }
+        .level-btn:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
+        .level-btn[aria-checked="true"] { background: #000; color: #fde047; transform: translateY(3px); box-shadow: 0 3px 0 #000; }
+        .level-missing { margin: 0; font-weight: 900; font-size: 1.15rem; color: #b45309; }
         .error { font-weight: 900; font-size: 1.2rem; color: #dc2626; background: #fef2f2; border: 2px solid #dc2626; border-radius: 1rem; padding: 0.75rem; }
         .summary {
             background: #facc15;
@@ -575,6 +593,14 @@
                 <span class="step-tag" data-scenario-name></span>
             </div>
             <div class="setup">
+                <!-- Class level: what comes next depends on it -->
+                <div class="level-pick">
+                    <h2 id="level-label">Choose the class level</h2>
+                    <div class="level-options" role="radiogroup" aria-labelledby="level-label">
+                        <button class="level-btn" role="radio" aria-checked="false" data-level="A1–A2">A1–A2</button>
+                        <button class="level-btn" role="radio" aria-checked="false" data-level="B1+">B1+</button>
+                    </div>
+                </div>
                 <h2>Enter the number of students in the class (4–45)</h2>
                 <div class="size-row">
                     <input type="number" id="input-students" min="4" max="45" value="20" aria-label="Number of students">
@@ -586,6 +612,7 @@
                     <div class="total">Total groups: <b id="total-groups"></b></div>
                     <div class="groups" id="groups-list"></div>
                 </div>
+                <p class="level-missing" id="level-missing" hidden>Choose the class level to continue.</p>
                 <div><button class="btn-go" id="setup-next" data-go="qr" hidden>Next step →</button></div>
             </div>
         </section>
@@ -764,7 +791,7 @@
         let hideTimer = null;
         let toastTimer = null;
 
-        const state = { activity: null, cluster: null, scenario: null, groups: [], classSize: 0, round: 1, totalRounds: 0, pairs: [] };
+        const state = { level: null, activity: null, cluster: null, scenario: null, groups: [], classSize: 0, round: 1, totalRounds: 0, pairs: [] };
 
         function showToast(message, top = false) {
             toast.textContent = message;
@@ -786,7 +813,8 @@
             if (id === 'welcome' && openCluster !== null) setLayer(CLUSTERS[openCluster]);
             else if (id !== 'welcome') setLayer(null);
             if (id === 'rounds') { if (keepRound) renderRound(); else startRounds(); }
-            document.querySelectorAll('[data-scenario-name]').forEach(e => e.textContent = state.scenario || '');
+            document.querySelectorAll('[data-scenario-name]').forEach(e =>
+                e.textContent = (state.scenario || '') + (state.level && id !== 'setup' ? ' · ' + state.level : ''));
             window.scrollTo(0, 0);
         }
         document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => goTo(b.dataset.go)));
@@ -1064,10 +1092,10 @@
             const ok = !isNaN(val) && val >= 4 && val <= 45;
             document.getElementById('size-error').hidden = ok;
             document.getElementById('summary').hidden = !ok;
-            document.getElementById('setup-next').hidden = !ok;
-            if (!ok) return;
+            if (!ok) { updateSetupNext(); return; }
             state.groups = isPlanning() ? pairGroups(val) : GROUPS_BY_SIZE[val];
             state.classSize = val;
+            updateSetupNext();
             document.getElementById('total-groups').textContent = state.groups.length;
             const list = document.getElementById('groups-list');
             list.innerHTML = '';
@@ -1081,7 +1109,20 @@
         sizeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') calculateGroups(); });
         sizeInput.addEventListener('input', () => {
             document.getElementById('summary').hidden = true;
-            document.getElementById('setup-next').hidden = true;
+            updateSetupNext();
+        });
+
+        // Next step needs both the class size and the level
+        function updateSetupNext() {
+            const sized = !document.getElementById('summary').hidden;
+            document.getElementById('setup-next').hidden = !(sized && state.level);
+            document.getElementById('level-missing').hidden = !(sized && !state.level);
+        }
+        document.querySelectorAll('.level-btn').forEach(btn => btn.onclick = () => {
+            document.querySelectorAll('.level-btn').forEach(b => b.setAttribute('aria-checked', 'false'));
+            btn.setAttribute('aria-checked', 'true');
+            state.level = btn.dataset.level;
+            updateSetupNext();
         });
 
         // ---------- QR: sign-up tracker ----------
