@@ -597,6 +597,7 @@
         .report .status { font-size: 0.85rem; font-weight: 900; padding: 0.1rem 0.6rem; border-radius: 999px; background: #fef3c7; border: 2px solid #000; white-space: nowrap; }
         .report.done { background: #ecfccb; }
         .report.done .status { background: #22c55e; color: #fff; }
+        .report .members { font-size: 0.9rem; font-weight: 900; color: #4338ca; margin-bottom: 0.35rem; }
         .report p { margin: 0; font-size: 1rem; line-height: 1.4; color: #334155; }
         .report.waiting p { font-style: italic; color: #94a3b8; }
 
@@ -790,6 +791,7 @@
             <p class="teams-note">Reports appear exactly as the phones transcribe them, without corrections.</p>
             <div class="report-list" id="report-list"></div>
             <div class="teams-actions">
+                <button class="btn-small" id="toggle-names" aria-pressed="false">👁 Show team names</button>
                 <!-- Prototype only: stands in for a team sending its voice report -->
                 <button class="demo-btn" id="demo-report">+ Simulate a team report (prototype)</button>
                 <button class="btn-go" data-go="end">Finish →</button>
@@ -1557,10 +1559,22 @@
             "we going to the beach the weekend we share the car and we take games and music and uh sunscream"
         ];
         let reports = [];
+        let showNames = false;   // teams are anonymous by default; the teacher can reveal names
+
+        document.getElementById('toggle-names').onclick = () => {
+            showNames = !showNames;
+            const b = document.getElementById('toggle-names');
+            b.textContent = showNames ? '🙈 Hide team names' : '👁 Show team names';
+            b.setAttribute('aria-pressed', String(showNames));
+            renderReports();
+        };
 
         function openReports() {
             stopClock();
             reports = state.teams.map(() => null);
+            showNames = false;
+            document.getElementById('toggle-names').textContent = '👁 Show team names';
+            document.getElementById('toggle-names').setAttribute('aria-pressed', 'false');
             renderReports();
             goTo('reports');
             showToast('Report request sent to every phone', true);
@@ -1580,9 +1594,16 @@
                 st.className = 'status';
                 st.textContent = text ? '✓ Received' : '🎤 Recording…';
                 h.appendChild(st);
+                card.appendChild(h);
+                if (showNames) {
+                    const who = document.createElement('div');
+                    who.className = 'members';
+                    who.textContent = state.teams[t].map((n, i) => n || 'Student ' + (i + 1)).join(' · ');
+                    card.appendChild(who);
+                }
                 const p = document.createElement('p');
                 p.textContent = text ? '“' + text + '”' : 'Waiting for the voice report';
-                card.append(h, p);
+                card.appendChild(p);
                 list.appendChild(card);
             });
             document.getElementById('demo-report').hidden = done === reports.length;
