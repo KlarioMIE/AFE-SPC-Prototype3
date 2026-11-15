@@ -563,6 +563,32 @@
         .shuffle-box .teams-note { margin: 0.75rem 0 0; }
         .topic-list[hidden], .shuffle-box[hidden] { display: none; }
 
+        /* ---------- Plan reports ---------- */
+        .stage-row { display: flex; align-items: center; justify-content: center; gap: 2.5rem; flex-wrap: wrap; }
+        .report-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+            width: 15rem; font-family: inherit; text-align: center;
+            background: #ef4444; color: #fff;
+            border: 4px solid #000; border-radius: 2rem; box-shadow: 0 8px 0 #000;
+            padding: 1.4rem 1rem; cursor: pointer;
+        }
+        .report-btn[hidden] { display: none; }
+        .report-btn:active { transform: translateY(4px); box-shadow: 0 4px 0 #000; }
+        .report-btn:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
+        .report-btn .mic { font-size: 2.6rem; line-height: 1; }
+        .report-btn .report-label { font-size: 1.5rem; font-weight: 900; line-height: 1.15; }
+        .report-btn small { font-size: 0.9rem; font-weight: 700; line-height: 1.25; }
+        .report-btn.confirm { background: #000; color: #fde047; }
+        .report-count { text-align: center; font-size: 1.4rem; font-weight: 700; margin-bottom: 1rem; }
+        .report-list { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); }
+        .report { background: #fff; border: 3px solid #000; border-radius: 1.25rem; box-shadow: 0 5px 0 #000; padding: 0.9rem 1rem; }
+        .report h3 { margin: 0 0 0.3rem; font-size: 1.1rem; font-weight: 900; display: flex; justify-content: space-between; gap: 0.5rem; }
+        .report .status { font-size: 0.85rem; font-weight: 900; padding: 0.1rem 0.6rem; border-radius: 999px; background: #fef3c7; border: 2px solid #000; white-space: nowrap; }
+        .report.done { background: #ecfccb; }
+        .report.done .status { background: #22c55e; color: #fff; }
+        .report p { margin: 0; font-size: 1rem; line-height: 1.4; color: #334155; }
+        .report.waiting p { font-style: italic; color: #94a3b8; }
+
         /* ---------- Teams ---------- */
         .teams-note { margin: -0.75rem 0 1.5rem; text-align: center; font-weight: 700; font-size: 1.15rem; color: #475569; }
         .teams { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 1.25rem; }
@@ -719,8 +745,33 @@
                 <span class="step-tag" id="round-tag"></span>
             </div>
             <h2 class="prep-title" id="prep-title" hidden>Prepare your role, use the questions on your mobile</h2>
-            <div class="round-stage">
-                <div class="round-card" id="round-card"></div>
+            <div class="stage-row">
+                <div class="round-stage">
+                    <div class="round-card" id="round-card"></div>
+                </div>
+                <!-- Planning: the teacher can end the practice at any round and ask for the reports -->
+                <button class="report-btn" id="request-reports" hidden>
+                    <span class="mic" aria-hidden="true">🎤</span>
+                    <span class="report-label">Request plan reports</span>
+                    <small>Ends the activity. Each team reports its plan by voice.</small>
+                </button>
+            </div>
+        </section>
+
+        <!-- SCREEN 5b: PLAN REPORTS (Planning) -->
+        <section id="screen-reports" class="screen" hidden>
+            <div class="top-bar">
+                <button class="back-btn" id="reports-back">← Back to the round</button>
+                <span class="step-tag" data-scenario-name></span>
+            </div>
+            <h2 class="prep-title">Teams, report your plan</h2>
+            <p class="teams-note">Use the microphone on your phone. Speak, don't type!</p>
+            <div class="report-count" id="report-count"></div>
+            <div class="report-list" id="report-list"></div>
+            <div class="teams-actions">
+                <!-- Prototype only: stands in for a team sending its voice report -->
+                <button class="demo-btn" id="demo-report">+ Simulate a team report (prototype)</button>
+                <button class="btn-go" data-go="end">Finish →</button>
             </div>
         </section>
 
@@ -1445,8 +1496,81 @@
             }
         }
 
+        // ---------- Plan reports (Planning) ----------
+        const reportBtn = document.getElementById('request-reports');
+        let confirmTimer = null;
+        function resetReportBtn() {
+            reportBtn.classList.remove('confirm');
+            reportBtn.querySelector('.report-label').textContent = 'Request plan reports';
+            reportBtn.querySelector('small').textContent = 'Ends the activity. Each team reports its plan by voice.';
+        }
+        // First tap asks to confirm (no browser pop-up); a second tap within 4 s sends the request
+        reportBtn.onclick = () => {
+            if (!reportBtn.classList.contains('confirm')) {
+                reportBtn.classList.add('confirm');
+                reportBtn.querySelector('.report-label').textContent = 'Tap again to confirm';
+                reportBtn.querySelector('small').textContent = 'The rounds end and phones open the microphone.';
+                clearTimeout(confirmTimer);
+                confirmTimer = setTimeout(resetReportBtn, 4000);
+                return;
+            }
+            clearTimeout(confirmTimer);
+            resetReportBtn();
+            openReports();
+        };
+
+        const SAMPLE_REPORTS = [
+            "We are going to the cinema on Saturday at seven. We take the bus and we have twenty dollars each.",
+            "Our plan is a picnic in the park on Sunday. We bring sandwiches and juice, and if it rains we go to my house.",
+            "We want to go to a concert on Friday night. We wear jeans and t-shirts, and we go by metro.",
+            "We plan a dinner at an Italian restaurant. It costs about fifteen dollars and we invite two friends.",
+            "We are going to the beach for the weekend. We share the cost of the car and we take games and music."
+        ];
+        let reports = [];
+
+        function openReports() {
+            stopClock();
+            reports = state.teams.map(() => null);
+            renderReports();
+            goTo('reports');
+            showToast('Report request sent to every phone', true);
+        }
+
+        function renderReports() {
+            const done = reports.filter(Boolean).length;
+            document.getElementById('report-count').textContent = done + ' of ' + reports.length + ' teams have reported';
+            const list = document.getElementById('report-list');
+            list.innerHTML = '';
+            reports.forEach((text, t) => {
+                const card = document.createElement('div');
+                card.className = 'report ' + (text ? 'done' : 'waiting');
+                const h = document.createElement('h3');
+                h.textContent = 'Team ' + (t + 1);
+                const st = document.createElement('span');
+                st.className = 'status';
+                st.textContent = text ? '✓ Received' : '🎤 Recording…';
+                h.appendChild(st);
+                const p = document.createElement('p');
+                p.textContent = text || 'Waiting for the voice report';
+                card.append(h, p);
+                list.appendChild(card);
+            });
+            document.getElementById('demo-report').hidden = done === reports.length;
+        }
+
+        document.getElementById('demo-report').onclick = () => {
+            const t = reports.findIndex(x => !x);
+            if (t < 0) return;
+            reports[t] = SAMPLE_REPORTS[t % SAMPLE_REPORTS.length];
+            renderReports();
+            showToast('✓ Team ' + (t + 1) + ' sent its plan report', true);
+        };
+        document.getElementById('reports-back').onclick = () => goTo('rounds', true);
+
         function renderRound() {
             stopClock();
+            reportBtn.hidden = !isPlanning();
+            resetReportBtn();
             clock.seconds = clock.minutes * 60;
             const prep = state.round === 0;
             document.getElementById('prep-title').hidden = !prep;
