@@ -232,15 +232,369 @@
             text-align: center;
         }
         .toast.show { display: block; }
+
+        .bubble > :last-child { margin-bottom: 0; }
+
+        /* ---------- Screens ---------- */
+        .screen { width: 100%; flex-grow: 1; display: flex; flex-direction: column; }
+        .screen[hidden] { display: none; }
+        #screen-welcome { align-items: center; justify-content: center; }
+        .app.inner { justify-content: flex-start; }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .back-btn, .btn-small {
+            font-family: inherit;
+            font-weight: 900;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: #fff;
+            color: #000;
+            border: 3px solid #000;
+            border-radius: 0.75rem;
+            box-shadow: 0 5px 0 #000;
+            padding: 0.6rem 1.2rem;
+            cursor: pointer;
+        }
+        .back-btn:active, .btn-small:active { transform: translateY(3px); box-shadow: 0 2px 0 #000; }
+        .back-btn:focus-visible, .btn-small:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
+        .step-tag {
+            font-weight: 900;
+            font-style: italic;
+            text-transform: uppercase;
+            color: #312e81;
+            font-size: clamp(1rem, 2vw, 1.4rem);
+        }
+        .screen-title {
+            font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+            font-weight: 900;
+            color: #4338ca;
+            margin: 0 0 1rem;
+        }
+        .btn-go {
+            font-family: inherit;
+            font-weight: 900;
+            font-size: clamp(1.4rem, 3vw, 2.2rem);
+            background: #22c55e;
+            color: #fff;
+            border: 3px solid #000;
+            border-radius: 999px;
+            box-shadow: 0 7px 0 #000;
+            padding: 1rem 2.5rem;
+            cursor: pointer;
+        }
+        .btn-go:active { transform: translateY(4px); box-shadow: 0 3px 0 #000; }
+        .btn-go:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
+
+        /* Small "i" placed next to a control (not on a card corner) */
+        .info-inline {
+            position: static;
+            flex-shrink: 0;
+            background: #1e3a8a;
+            color: #fff;
+            border-color: #1e3a8a;
+        }
+        .info-wrap { display: inline-flex; }
+
+        /* ---------- Scenarios ---------- */
+        .scenarios {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+            min-height: 60vh;
+        }
+        @media (max-width: 760px) { .scenarios { grid-template-columns: 1fr; } }
+        .scenario-list { display: grid; gap: 0.75rem; align-content: start; max-height: 65vh; overflow-y: auto; padding: 0.4rem 1rem 0.6rem 0.2rem; }
+        .scenario-row { display: flex; align-items: center; gap: 0.75rem; }
+        .scenario-item {
+            flex-grow: 1;
+            font-family: inherit;
+            font-size: 1.2rem;
+            font-weight: 900;
+            text-align: left;
+            background: #fff;
+            color: #000;
+            border: 3px solid #000;
+            border-radius: 0.75rem;
+            padding: 0.9rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .scenario-item:hover { background: #f8fafc; transform: translateX(6px); }
+        .scenario-item:focus-visible { outline: 4px solid #2563eb; outline-offset: 2px; }
+        .scenario-item[aria-pressed="true"] { background: #3b82f6; color: #fff; }
+        .scenario-choice {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            text-align: center;
+            background: #f9fafb;
+            border: 4px dashed #d1d5db;
+            border-radius: 2.5rem;
+            padding: 2rem;
+        }
+        .scenario-choice p { margin: 0; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 900; font-style: italic; color: #d1d5db; }
+        .scenario-choice p.chosen { color: #4338ca; }
+
+        /* ---------- Class size ---------- */
+        .setup { display: flex; flex-direction: column; gap: 2rem; max-width: 46rem; }
+        .setup h2 { margin: 0; font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 900; }
+        .size-row { display: flex; gap: 1rem; align-items: center; }
+        .size-row input {
+            width: 9rem;
+            font-family: inherit;
+            font-size: 3rem;
+            font-weight: 900;
+            text-align: center;
+            border: 3px solid #000;
+            border-radius: 1.5rem;
+            padding: 0.6rem;
+        }
+        .size-row input:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
+        .btn-enter {
+            font-family: inherit;
+            font-size: 1.5rem;
+            font-weight: 900;
+            background: #2563eb;
+            color: #fff;
+            border: 3px solid #000;
+            border-radius: 1.5rem;
+            box-shadow: 0 6px 0 #000;
+            padding: 1rem 2rem;
+            cursor: pointer;
+        }
+        .btn-enter:active { transform: translateY(3px); box-shadow: 0 3px 0 #000; }
+        .error { font-weight: 900; font-size: 1.2rem; color: #dc2626; background: #fef2f2; border: 2px solid #dc2626; border-radius: 1rem; padding: 0.75rem; }
+        .summary {
+            background: #facc15;
+            border: 4px solid #000;
+            border-radius: 2rem;
+            box-shadow: 8px 8px 0 #000;
+            padding: 1.5rem 1.75rem;
+        }
+        .summary .label { margin: 0 0 0.5rem; font-weight: 900; text-decoration: underline; text-transform: uppercase; }
+        .summary .total { display: flex; align-items: center; gap: 0.75rem; font-size: 1.6rem; font-weight: 900; margin-bottom: 0.75rem; }
+        .summary .total b { background: #000; color: #fff; padding: 0.1rem 0.7rem; border-radius: 0.5rem; }
+        .summary .groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.25rem 1.5rem; font-weight: 700; font-size: 1.1rem; }
+        .summary .groups span { color: #1e3a8a; }
+
+        /* ---------- QR ---------- */
+        #screen-qr { align-items: center; }
+        .qr-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            text-align: center;
+            max-width: 40rem;
+            width: 100%;
+            background: #fff;
+            border: 4px solid #000;
+            border-radius: 2.5rem;
+            box-shadow: 10px 10px 0 #000;
+            padding: 2rem;
+        }
+        .qr-card h2 { margin: 0; font-size: clamp(1.5rem, 3.5vw, 2.4rem); font-weight: 900; text-transform: uppercase; color: #2563eb; line-height: 1.15; }
+        .qr-card img { width: min(18rem, 70vw); height: min(18rem, 70vw); object-fit: cover; border-radius: 1rem; border: 2px solid #f3f4f6; }
+        .qr-card .hint { margin: 0; font-size: 1.1rem; font-weight: 700; color: #475569; }
+
+        /* ---------- Rounds: one round per screen ---------- */
+        #screen-rounds { align-items: center; }
+        .round-stage {
+            background: #4f46e5;
+            border: 6px solid #000;
+            border-radius: 3rem;
+            padding: 1.5rem;
+            box-shadow: 12px 12px 0 rgba(0, 0, 0, 0.12);
+        }
+        .round-card {
+            width: min(22rem, calc(100vw - 6rem));
+            background: #fff;
+            border: 4px solid #000;
+            border-radius: 2.5rem;
+            box-shadow: 8px 8px 0 #000;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .round-card h3 { margin: 0; text-align: center; font-size: 1.6rem; font-weight: 900; font-style: italic; text-transform: uppercase; color: #2563eb; }
+        /* Each part of the card can carry a callout on the left and an "i" on the right */
+        .part { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+        .part > .info-wrap { position: absolute; left: calc(100% + 3rem); top: 50%; transform: translateY(-50%); }
+        .callout {
+            position: absolute;
+            right: calc(100% + 3rem);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 13rem;
+            font-weight: 900;
+            font-size: 1.1rem;
+            line-height: 1.25;
+            color: #1d4ed8;
+            background: #fff;
+            border: 3px solid #1d4ed8;
+            border-radius: 0.75rem;
+            padding: 0.6rem 0.8rem;
+            text-align: center;
+        }
+        .callout::after {
+            content: "";
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 14px solid transparent;
+            border-left-color: #1d4ed8;
+        }
+        /* Narrow screens: callouts and "i" go inside the card flow */
+        @media (max-width: 1000px) {
+            .callout { position: static; transform: none; width: auto; font-size: 0.95rem; }
+            .callout::after { display: none; }
+            .part > .info-wrap { position: absolute; left: auto; right: -1rem; top: -1rem; transform: none; }
+        }
+        .minutes { display: flex; align-items: center; gap: 0.6rem; background: #f9fafb; border: 2px solid #000; border-radius: 0.75rem; padding: 0.4rem 0.6rem; }
+        .minutes input { width: 4rem; font-family: inherit; font-size: 1.3rem; font-weight: 900; text-align: center; border: 3px solid #000; border-radius: 0.4rem; }
+        .minutes span { font-weight: 900; text-transform: uppercase; }
+        .timer {
+            width: 100%;
+            text-align: center;
+            font-size: 3.2rem;
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 2px 2px 0 #000;
+            background: #000;
+            color: #facc15;
+            border: 2px solid #facc15;
+            border-radius: 1.5rem;
+            padding: 1.2rem 0.5rem;
+        }
+        .timer.done { color: #ef4444; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; width: 100%; }
+        .controls button {
+            font-family: inherit;
+            font-size: 1.15rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #fff;
+            border: 3px solid #000;
+            border-radius: 0.75rem;
+            box-shadow: 0 5px 0 #000;
+            padding: 0.9rem 0.5rem;
+            cursor: pointer;
+        }
+        .controls button:active { transform: translateY(3px); box-shadow: 0 2px 0 #000; }
+        .controls button:disabled { opacity: 0.5; cursor: default; }
+        .controls .start { background: #22c55e; }
+        .controls .start.running { background: #f97316; }
+        .controls .next { background: #ef4444; }
+        .controls .reset { grid-column: 1 / -1; background: #f3f4f6; color: #000; font-size: 0.8rem; letter-spacing: 0.15em; padding: 0.5rem; }
+        .pairs { width: 100%; text-align: center; background: #eef2ff; border: 2px dashed #c7d2fe; border-radius: 1.5rem; padding: 0.9rem; }
+        .pairs small { display: block; font-size: 0.65rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; color: #818cf8; margin-bottom: 0.25rem; }
+        .pairs b { font-size: 1.15rem; color: #312e81; }
+
+        /* ---------- End ---------- */
+        #screen-end { align-items: center; justify-content: center; text-align: center; gap: 1.5rem; }
+        #screen-end h2 { margin: 0; font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; color: #2563eb; }
+        #screen-end h3 { margin: 0; font-size: 1.4rem; font-weight: 900; font-style: italic; text-transform: uppercase; }
+        .feedback { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+        .feedback button { font-size: 1.2rem; padding: 0.9rem 1.8rem; letter-spacing: 0; text-transform: none; }
     </style>
 </head>
 <body>
 
-    <div class="app">
-        <!-- SCREEN 1: WELCOME -->
-        <h1>Speaking-Practice Center</h1>
-        <p class="subtitle" id="subtitle">Choose the type of activity here</p>
-        <div id="activity-grid" class="grid"></div>
+    <div class="app" id="app">
+        <!-- SCREEN 1: WELCOME (clusters → activities) -->
+        <section id="screen-welcome" class="screen">
+            <h1>Speaking-Practice Center</h1>
+            <p class="subtitle" id="subtitle">Choose the type of activity here</p>
+            <div id="activity-grid" class="grid"></div>
+        </section>
+
+        <!-- SCREEN 2: SCENARIOS -->
+        <section id="screen-scenarios" class="screen" hidden>
+            <div class="top-bar">
+                <button class="back-btn" data-go="welcome">← Go back</button>
+                <span class="step-tag" id="scenarios-tag"></span>
+            </div>
+            <div class="scenarios">
+                <div>
+                    <h2 class="screen-title">Choose a scenario</h2>
+                    <div id="scenario-list" class="scenario-list"></div>
+                </div>
+                <div class="scenario-choice">
+                    <p id="scenario-chosen">Choose a scenario to proceed</p>
+                    <button class="btn-go" id="scenario-next" data-go="setup" hidden>Next step →</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 3: CLASS SIZE + GROUPS SUMMARY -->
+        <section id="screen-setup" class="screen" hidden>
+            <div class="top-bar">
+                <button class="back-btn" data-go="scenarios">← Go back</button>
+                <span class="step-tag" data-scenario-name></span>
+            </div>
+            <div class="setup">
+                <h2>Enter the number of students in the class (4–45)</h2>
+                <div class="size-row">
+                    <input type="number" id="input-students" min="4" max="45" value="20" aria-label="Number of students">
+                    <button class="btn-enter" id="btn-enter">Enter</button>
+                </div>
+                <div class="error" id="size-error" role="alert" hidden>Out of range (4–45)</div>
+                <div class="summary" id="summary" hidden>
+                    <p class="label">Summary:</p>
+                    <div class="total">Total groups: <b id="total-groups"></b></div>
+                    <div class="groups" id="groups-list"></div>
+                </div>
+                <div><button class="btn-go" id="setup-next" data-go="qr" hidden>Next step →</button></div>
+            </div>
+        </section>
+
+        <!-- SCREEN 4: QR (alone, so students only see this) -->
+        <section id="screen-qr" class="screen" hidden>
+            <div class="top-bar" style="align-self: stretch;">
+                <button class="back-btn" data-go="setup">← Go back</button>
+                <span class="step-tag" data-scenario-name></span>
+            </div>
+            <div class="qr-card">
+                <h2>Students, please scan this QR code</h2>
+                <img src="https://lh3.googleusercontent.com/d/1XFtIe_tO6ISipmh-saLrYLGCMbJ-nYYf" alt="QR code for students to join">
+                <p class="hint">When everyone has joined, press Next step.</p>
+                <button class="btn-go" data-go="rounds">Next step →</button>
+            </div>
+        </section>
+
+        <!-- SCREEN 5: ROUNDS (one round at a time) -->
+        <section id="screen-rounds" class="screen" hidden>
+            <div class="top-bar" style="align-self: stretch;">
+                <button class="back-btn" id="rounds-back">← Go back</button>
+                <span class="step-tag" id="round-tag"></span>
+            </div>
+            <div class="round-stage">
+                <div class="round-card" id="round-card"></div>
+            </div>
+        </section>
+
+        <!-- SCREEN 6: END -->
+        <section id="screen-end" class="screen" hidden>
+            <h2>All rounds done!</h2>
+            <h3>Send feedback?</h3>
+            <div class="feedback">
+                <button class="btn-small fake-door" style="background:#facc15">To teacher</button>
+                <button class="btn-small fake-door" style="background:#22d3ee">To students</button>
+            </div>
+            <button class="back-btn" data-go="welcome">Back to start</button>
+        </section>
     </div>
 
     <div id="bubble" class="bubble" role="tooltip"></div>
@@ -249,10 +603,10 @@
     <script>
         // Clusters, activities, CEFR levels and bubble texts come from
         // "Definición Actividades_SPC_Homepage - ESTRUCTURA.docx" (Claudio, 2026-11-15).
-        // Set available: true on an activity once its next screen exists.
+        // available: true sends the activity to the Scenarios flow (tested in Prototype 2 as Role-play).
         const CLUSTERS = [
             { name: "Interview", color: "#22d3ee", activities: [
-                { name: "Prepared", level: "A2–B1",
+                { name: "Prepared", level: "A2–B1", available: true,
                   text: "Students are given the purpose of the interview, and are given time to prepare questions." },
                 { name: "Spontaneous", level: "B1+",
                   text: "Students are given the purpose of the interview, and are prompted with a sequence of different aspects of that context." }
@@ -303,14 +657,52 @@
             { name: "More...", color: "#fef08a" }
         ];
 
+        const SCENARIOS = [
+            "Graduate Study Fair", "Street Market", "Hotel", "City Tour", "The Neighborhood",
+            "Restaurant", "Department Store", "Medical Center", "Police Station", "Job Fair",
+            "Tech Support", "Party", "Sports Center", "First Day at University",
+            "Customer Service", "Real State Fair", "The Night Out", "The City Hall", "Community Center"
+        ];
+
+        // Groups of 4–7 students for each class size (from Prototype 2)
+        const GROUPS_BY_SIZE = {
+            4: [4], 5: [5], 6: [6], 7: [7], 8: [4, 4], 9: [4, 5], 10: [5, 5],
+            11: [5, 6], 12: [6, 6], 13: [7, 6], 14: [7, 7], 15: [5, 5, 5],
+            16: [6, 5, 5], 17: [6, 6, 5], 18: [6, 6, 6], 19: [7, 6, 6], 20: [7, 7, 6],
+            21: [7, 7, 7], 22: [6, 6, 5, 5], 23: [7, 6, 5, 5], 24: [6, 6, 6, 6],
+            25: [7, 6, 6, 6], 26: [7, 7, 6, 6], 27: [7, 7, 7, 6], 28: [7, 7, 7, 7],
+            29: [6, 6, 6, 6, 5], 30: [6, 6, 6, 6, 6], 31: [7, 6, 6, 6, 6], 32: [7, 7, 6, 6, 6],
+            33: [7, 7, 7, 6, 6], 34: [7, 7, 7, 7, 6], 35: [7, 7, 7, 7, 7], 36: [6, 6, 6, 6, 6, 6],
+            37: [7, 6, 6, 6, 6, 6], 38: [7, 7, 6, 6, 6, 6], 39: [7, 7, 7, 6, 6, 6], 40: [7, 7, 7, 7, 6, 6],
+            41: [7, 7, 7, 7, 7, 6], 42: [7, 7, 7, 7, 7, 7], 43: [7, 6, 6, 6, 6, 6, 6], 44: [7, 7, 6, 6, 6, 6, 6],
+            45: [7, 7, 7, 6, 6, 6, 6]
+        };
+        const ROUNDS_BY_GROUP_SIZE = { 4: 3, 5: 3, 6: 5, 7: 5 };
+        const PAIRS_BY_GROUP_SIZE = {
+            4: ["P1-P3 / P2-P4", "P1-P4 / P2-P3", "P1-P2 / P3-P4"],
+            5: ["(P1-P2-P5) / P3-P4", "(P3-P4-P5) / P1-P2", "(P5-P1-P4) / P2-P3"],
+            6: ["P1-P3 / P2-P4 / P5-P6", "P1-P4 / P2-P5 / P3-P6", "P1-P5 / P2-P6 / P3-P4", "P1-P2 / P3-P5 / P4-P6", "P1-P6 / P2-P3 / P4-P5"],
+            7: ["P1-P3 / P2-P4 / (P5-P6-P7)", "P1-P4 / P3-P5 / (P2-P6-P7)", "P2-P3 / P1-P6 / (P4-P5-P7)", "P1-P2 / P4-P6 / (P3-P5-P7)", "P3-P4 / P6-P5 / (P1-P2-P7)"]
+        };
+
+        // Help bubbles for the timer tools on the rounds screen: DRAFT by Claude (2026-11-15).
+        const HELP = {
+            time: { title: "Round time", text: "Set the minutes for this round, then press START. You can pause and change the time before starting again." },
+            controls: { title: "Start, Next and Reset", text: "START runs the clock (press again to pause). NEXT ends this round and moves on. RESET puts the clock back to the time you set." },
+            pairs: { title: "Pairs", text: "Each student sees a participant number (P1, P2…) on their phone. In every group, the students with these numbers talk to each other this round." }
+        };
+
+        const app = document.getElementById('app');
         const grid = document.getElementById('activity-grid');
         const bubble = document.getElementById('bubble');
         const toast = document.getElementById('toast');
         const subtitle = document.getElementById('subtitle');
-        let openCard = null;      // activity card whose bubble is open
+        let openCard = null;      // element whose bubble is open
         let openCluster = null;   // index of the open cluster
         let hideTimer = null;
         let toastTimer = null;
+
+        const state = { activity: null, cluster: null, scenario: null, groups: [], round: 1, totalRounds: 0, pairs: [] };
 
         function showToast(message) {
             toast.textContent = message;
@@ -318,37 +710,56 @@
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
         }
+        document.querySelectorAll('.fake-door').forEach(b => b.onclick = () => showToast('Coming soon!'));
 
-        // ---------- Bubbles (one per specific activity) ----------
+        // ---------- Screens ----------
 
-        function fillBubble(cluster, activity) {
+        function goTo(id) {
+            closeBubble();
+            stopClock();
+            document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== 'screen-' + id);
+            app.classList.toggle('inner', id !== 'welcome' && id !== 'end');
+            // Leaving the welcome screen: the cluster tint stays only there
+            if (id === 'welcome' && openCluster !== null) setLayer(CLUSTERS[openCluster]);
+            else if (id !== 'welcome') setLayer(null);
+            if (id === 'rounds') startRounds();
+            document.querySelectorAll('[data-scenario-name]').forEach(e => e.textContent = state.scenario || '');
+            window.scrollTo(0, 0);
+        }
+        document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => goTo(b.dataset.go)));
+
+        function setLayer(cluster) {
+            document.body.classList.toggle('in-cluster', !!cluster);
+            if (cluster) document.body.style.setProperty('--layer-color', cluster.color);
+            else document.body.style.removeProperty('--layer-color');
+        }
+
+        // ---------- Bubbles ----------
+        // content: { tag, title, text, notes, level, tutorial }
+
+        function fillBubble(c) {
             bubble.innerHTML = '';
-            const tag = document.createElement('p');
-            tag.className = 'cluster-tag';
-            tag.textContent = cluster.name;
-            const title = document.createElement('h2');
-            title.textContent = activity.name;
-            const text = document.createElement('p');
-            text.textContent = activity.text;
-            bubble.append(tag, title, text);
-            if (activity.notes) {
-                const list = document.createElement('ul');
-                activity.notes.forEach(n => {
-                    const li = document.createElement('li');
-                    li.textContent = n;
-                    list.appendChild(li);
-                });
-                bubble.appendChild(list);
+            const add = (tagName, cls, text) => {
+                const el = document.createElement(tagName);
+                if (cls) el.className = cls;
+                if (text) el.textContent = text;
+                bubble.appendChild(el);
+                return el;
+            };
+            if (c.tag) add('p', 'cluster-tag', c.tag);
+            add('h2', '', c.title);
+            add('p', '', c.text);
+            if (c.notes) {
+                const list = add('ul');
+                c.notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; list.appendChild(li); });
             }
-            const level = document.createElement('div');
-            level.className = 'level';
-            level.textContent = 'Suggested CEFR level: ' + activity.level;
-            // Fake door: the quick YouTube tutorial does not exist yet
-            const tutorial = document.createElement('button');
-            tutorial.className = 'tutorial-btn';
-            tutorial.innerHTML = '<span aria-hidden="true">▶</span> Quick tutorial';
-            tutorial.onclick = () => showToast('Video tutorial coming soon!');
-            bubble.append(level, tutorial);
+            if (c.level) add('div', 'level', 'Suggested CEFR level: ' + c.level);
+            if (c.tutorial) {
+                // Fake door: the quick YouTube tutorial does not exist yet
+                const t = add('button', 'tutorial-btn');
+                t.innerHTML = '<span aria-hidden="true">▶</span> Quick tutorial';
+                t.onclick = () => showToast('Video tutorial coming soon!');
+            }
         }
 
         function positionBubble(card) {
@@ -358,7 +769,7 @@
             let left = r.left + r.width / 2 - width / 2;
             left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
 
-            // Show below the button unless there is no room; then show above
+            // Show below the element unless there is no room; then show above
             const spaceBelow = window.innerHeight - r.bottom;
             const below = spaceBelow > bubble.offsetHeight + 24 || r.top < bubble.offsetHeight + 24;
             bubble.classList.toggle('below', below);
@@ -370,9 +781,11 @@
             bubble.style.setProperty('--tail-x', (r.left + r.width / 2 - left) + 'px');
         }
 
-        function openBubble(card, cluster, activity) {
+        let openedBy = null;
+        function openBubble(card, content, how = 'hover') {
             clearTimeout(hideTimer);
-            fillBubble(cluster, activity);
+            openedBy = how;
+            fillBubble(content);
             bubble.classList.add('open');
             positionBubble(card);
             openCard = card;
@@ -388,6 +801,32 @@
             hideTimer = setTimeout(closeBubble, 200);
         }
 
+        // Makes an "i" button. Hovering `hoverArea` (mouse), focusing `focusEl` (keyboard)
+        // or tapping the "i" (touch) opens the bubble, pointing at `anchor`.
+        function makeInfo(label, content, { anchor, hoverArea, focusEl, inline } = {}) {
+            const info = document.createElement('button');
+            info.className = 'info-btn' + (inline ? ' info-inline' : '');
+            info.textContent = 'i';
+            info.setAttribute('aria-label', 'About ' + label);
+            const target = () => anchor || info;
+            info.onclick = (e) => {
+                e.stopPropagation();
+                // A click on a bubble already opened by hover keeps it open (pinned)
+                if (openCard === target() && openedBy === 'click') closeBubble();
+                else openBubble(target(), content, 'click');
+            };
+            const area = hoverArea || info;
+            area.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'touch') openBubble(target(), content); });
+            area.addEventListener('pointerleave', (e) => { if (e.pointerType !== 'touch' && openedBy !== 'click') closeSoon(); });
+            if (focusEl) [focusEl].forEach(el => {
+                el.addEventListener('focus', () => openBubble(target(), content));
+                el.addEventListener('blur', closeSoon);
+            });
+            return info;
+        }
+
+        // ---------- Welcome: clusters and activities ----------
+
         function makeActivityCard(cluster, activity) {
             const card = document.createElement('div');
             card.className = 'card';
@@ -397,33 +836,20 @@
             btn.style.backgroundColor = cluster.color;
             btn.textContent = activity.name;
             btn.onclick = () => {
-                if (activity.available) showToast('Next step: the Scenarios screen (in progress).');
-                else showToast('Coming soon!');
+                if (activity.available) {
+                    state.activity = activity;
+                    state.cluster = cluster;
+                    document.getElementById('scenarios-tag').textContent = cluster.name + ' › ' + activity.name;
+                    goTo('scenarios');
+                } else showToast('Coming soon!');
             };
             card.appendChild(btn);
-
-            const info = document.createElement('button');
-            info.className = 'info-btn';
-            info.textContent = 'i';
-            info.setAttribute('aria-label', 'About ' + activity.name);
-            info.onclick = (e) => {
-                e.stopPropagation();
-                if (openCard === card) closeBubble();
-                else openBubble(card, cluster, activity);
-            };
-            card.appendChild(info);
-
-            // Mouse: open on hover. Keyboard: open on focus.
-            card.addEventListener('pointerenter', (e) => {
-                if (e.pointerType !== 'touch') openBubble(card, cluster, activity);
-            });
-            card.addEventListener('pointerleave', (e) => { if (e.pointerType !== 'touch') closeSoon(); });
-            btn.addEventListener('focus', () => openBubble(card, cluster, activity));
-            btn.addEventListener('blur', closeSoon);
+            card.appendChild(makeInfo(activity.name, {
+                tag: cluster.name, title: activity.name, text: activity.text,
+                notes: activity.notes, level: activity.level, tutorial: true
+            }, { anchor: card, hoverArea: card, focusEl: btn }));
             return card;
         }
-
-        // ---------- Clusters (each one unfolds its activities) ----------
 
         const panel = document.createElement('section');
         panel.className = 'panel';
@@ -433,7 +859,7 @@
 
         // Put the panel right after the row that holds the open cluster
         function placePanel() {
-            if (openCluster === null) return;
+            if (openCluster === null || panel.hidden) return;
             const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
             const rowEnd = Math.min(Math.floor(openCluster / cols) * cols + cols - 1, clusterCards.length - 1);
             clusterCards[rowEnd].after(panel);
@@ -447,8 +873,7 @@
             clusterCards[openCluster].querySelector('button').setAttribute('aria-expanded', 'false');
             panel.hidden = true;
             openCluster = null;
-            document.body.classList.remove('in-cluster');
-            document.body.style.removeProperty('--layer-color');
+            setLayer(null);
             subtitle.textContent = 'Choose the type of activity here';
             closeBubble();
         }
@@ -470,8 +895,7 @@
             panel.append(heading, list);
             panel.hidden = false;
             // Second layer: tint the page, fade the other clusters, show where we are
-            document.body.classList.add('in-cluster');
-            document.body.style.setProperty('--layer-color', cluster.color);
+            setLayer(cluster);
             subtitle.innerHTML = '';
             const crumb = document.createElement('span');
             crumb.className = 'crumb';
@@ -505,6 +929,203 @@
         });
         grid.appendChild(panel);
 
+        // ---------- Scenarios ----------
+
+        const scenarioList = document.getElementById('scenario-list');
+        const scenarioChosen = document.getElementById('scenario-chosen');
+        const scenarioNext = document.getElementById('scenario-next');
+        SCENARIOS.forEach(sc => {
+            const row = document.createElement('div');
+            row.className = 'scenario-row';
+            const btn = document.createElement('button');
+            btn.className = 'scenario-item';
+            btn.textContent = sc;
+            btn.setAttribute('aria-pressed', 'false');
+            btn.onclick = () => {
+                scenarioList.querySelectorAll('.scenario-item').forEach(b => b.setAttribute('aria-pressed', 'false'));
+                btn.setAttribute('aria-pressed', 'true');
+                state.scenario = sc;
+                scenarioChosen.textContent = 'Topic: ' + sc;
+                scenarioChosen.classList.add('chosen');
+                scenarioNext.hidden = false;
+            };
+            row.appendChild(btn);
+            scenarioList.appendChild(row);
+        });
+
+        // ---------- Class size and groups ----------
+
+        const sizeInput = document.getElementById('input-students');
+
+        function calculateGroups() {
+            const val = parseInt(sizeInput.value, 10);
+            const ok = !isNaN(val) && val >= 4 && val <= 45;
+            document.getElementById('size-error').hidden = ok;
+            document.getElementById('summary').hidden = !ok;
+            document.getElementById('setup-next').hidden = !ok;
+            if (!ok) return;
+            state.groups = GROUPS_BY_SIZE[val];
+            document.getElementById('total-groups').textContent = state.groups.length;
+            const list = document.getElementById('groups-list');
+            list.innerHTML = '';
+            state.groups.forEach((n, i) => {
+                const d = document.createElement('div');
+                d.innerHTML = `Group ${i + 1}: <span>${n} members</span>`;
+                list.appendChild(d);
+            });
+        }
+        document.getElementById('btn-enter').onclick = calculateGroups;
+        sizeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') calculateGroups(); });
+        sizeInput.addEventListener('input', () => {
+            document.getElementById('summary').hidden = true;
+            document.getElementById('setup-next').hidden = true;
+        });
+
+        // ---------- Rounds: one per screen ----------
+
+        const clock = { interval: null, seconds: 120, minutes: 2 };
+
+        function startRounds() {
+            const lookup = Math.max(4, Math.min(7, Math.min(...state.groups)));
+            state.totalRounds = ROUNDS_BY_GROUP_SIZE[lookup] || 3;
+            state.pairs = PAIRS_BY_GROUP_SIZE[lookup] || PAIRS_BY_GROUP_SIZE[4];
+            state.round = 1;
+            renderRound();
+        }
+
+        function fmt(sec) { return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+
+        function stopClock() {
+            clearInterval(clock.interval);
+            clock.interval = null;
+        }
+
+        function part(callout, help, ...children) {
+            const p = document.createElement('div');
+            p.className = 'part';
+            if (callout) {
+                const c = document.createElement('div');
+                c.className = 'callout';
+                c.textContent = callout;
+                p.appendChild(c);
+            }
+            p.append(...children);
+            if (help) {
+                const w = document.createElement('span');
+                w.className = 'info-wrap';
+                w.appendChild(makeInfo(help.title, help, { inline: true }));
+                p.appendChild(w);
+            }
+            return p;
+        }
+
+        function renderRound() {
+            stopClock();
+            clock.seconds = clock.minutes * 60;
+            document.getElementById('round-tag').textContent =
+                (state.scenario || '') + ' · Round ' + state.round + ' of ' + state.totalRounds;
+            const card = document.getElementById('round-card');
+            card.innerHTML = '';
+
+            const h = document.createElement('h3');
+            h.textContent = 'Round ' + state.round;
+
+            const minutes = document.createElement('label');
+            minutes.className = 'minutes';
+            const input = document.createElement('input');
+            input.type = 'number'; input.min = 1; input.max = 5; input.value = clock.minutes;
+            const span = document.createElement('span');
+            span.textContent = 'min';
+            minutes.append(input, span);
+
+            const display = document.createElement('div');
+            display.className = 'timer';
+            display.setAttribute('role', 'timer');
+            display.textContent = fmt(clock.seconds);
+
+            const controls = document.createElement('div');
+            controls.className = 'controls';
+            const start = document.createElement('button');
+            start.className = 'start';
+            start.textContent = 'Start';
+            const next = document.createElement('button');
+            next.className = 'next';
+            next.textContent = state.round < state.totalRounds ? 'Next' : 'Finish';
+            const reset = document.createElement('button');
+            reset.className = 'reset';
+            reset.textContent = 'Reset';
+            controls.append(start, next, reset);
+
+            const pairs = document.createElement('div');
+            pairs.className = 'pairs';
+            pairs.innerHTML = '<small>Pairs distribution</small>';
+            const b = document.createElement('b');
+            b.textContent = state.pairs[state.round - 1] || '';
+            pairs.appendChild(b);
+
+            input.onchange = () => {
+                const m = Math.max(1, Math.min(5, parseInt(input.value, 10) || 2));
+                input.value = m;
+                clock.minutes = m;
+                if (!clock.interval) {
+                    clock.seconds = m * 60;
+                    display.textContent = fmt(clock.seconds);
+                    display.classList.remove('done');
+                    start.disabled = false;
+                }
+            };
+            start.onclick = () => {
+                if (clock.interval) {
+                    stopClock();
+                    start.textContent = 'Start';
+                    start.classList.remove('running');
+                    return;
+                }
+                start.textContent = 'Pause';
+                start.classList.add('running');
+                clock.interval = setInterval(() => {
+                    clock.seconds--;
+                    if (clock.seconds <= 0) {
+                        stopClock();
+                        display.textContent = 'TIME!';
+                        display.classList.add('done');
+                        start.textContent = 'Start';
+                        start.classList.remove('running');
+                        start.disabled = true;
+                        return;
+                    }
+                    display.textContent = fmt(clock.seconds);
+                }, 1000);
+            };
+            reset.onclick = () => {
+                stopClock();
+                clock.seconds = clock.minutes * 60;
+                display.textContent = fmt(clock.seconds);
+                display.classList.remove('done');
+                start.textContent = 'Start';
+                start.classList.remove('running');
+                start.disabled = false;
+            };
+            next.onclick = () => {
+                if (state.round < state.totalRounds) { state.round++; renderRound(); }
+                else goTo('end');
+            };
+
+            card.append(
+                h,
+                part('Set the round time here', HELP.time, minutes, display),
+                part(null, HELP.controls, controls),
+                part('Pair up each group participants this way', HELP.pairs, pairs)
+            );
+        }
+
+        document.getElementById('rounds-back').onclick = () => {
+            if (state.round > 1) { state.round--; renderRound(); }
+            else goTo('qr');
+        };
+
+        // ---------- Global bubble behavior ----------
+
         // Keep the bubble open while the mouse is over it (to reach the tutorial button)
         bubble.addEventListener('mouseenter', () => clearTimeout(hideTimer));
         bubble.addEventListener('mouseleave', closeSoon);
@@ -517,7 +1138,7 @@
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
             if (openCard) closeBubble();
-            else if (openCluster !== null) {
+            else if (openCluster !== null && !document.getElementById('screen-welcome').hidden) {
                 const btn = clusterCards[openCluster].querySelector('button');
                 closeCluster();
                 btn.focus();
@@ -528,6 +1149,5 @@
             if (openCard) positionBubble(openCard);
         });
     </script>
-
 </body>
 </html>
