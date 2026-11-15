@@ -334,8 +334,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 1.5rem;
+            justify-content: space-between;
+            gap: 1.25rem;
             text-align: center;
             background: #f9fafb;
             border: 4px dashed #d1d5db;
@@ -344,6 +344,23 @@
         }
         .scenario-choice p { margin: 0; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 900; font-style: italic; color: #d1d5db; }
         .scenario-choice p.chosen { color: #4338ca; }
+        .scenario-choice p:only-child, .scenario-choice p:not(.chosen) { margin: auto 0; }
+        .scenario-image {
+            flex-grow: 1;
+            width: 100%;
+            min-height: 12rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            background: #e5e7eb;
+            color: #9ca3af;
+            font-weight: 900;
+            font-size: 1.2rem;
+        }
+        .scenario-image[hidden] { display: none; }
+        .scenario-image img { width: 100%; height: 100%; object-fit: cover; }
 
         /* ---------- Class size ---------- */
         .setup { display: flex; flex-direction: column; gap: 2rem; max-width: 46rem; }
@@ -510,8 +527,13 @@
                     <h2 class="screen-title">Choose a scenario</h2>
                     <div id="scenario-list" class="scenario-list"></div>
                 </div>
+                <!-- Topic on top, scenario image in the middle, button at the bottom -->
                 <div class="scenario-choice">
                     <p id="scenario-chosen">Choose a scenario to proceed</p>
+                    <div class="scenario-image" id="scenario-image" hidden>
+                        <img id="scenario-img" alt="" hidden>
+                        <span id="scenario-img-placeholder">Scenario image</span>
+                    </div>
                     <button class="btn-go" id="scenario-next" data-go="setup" hidden>Next step →</button>
                 </div>
             </div>
@@ -640,6 +662,8 @@
             { name: "More...", color: "#fef08a" }
         ];
 
+        // Scenario images: add "Scenario name": "image URL" when the images are ready
+        const SCENARIO_IMAGES = {};
         const SCENARIOS = [
             "Graduate Study Fair", "Street Market", "Hotel", "City Tour", "The Neighborhood",
             "Restaurant", "Department Store", "Medical Center", "Police Station", "Job Fair",
@@ -931,6 +955,12 @@
                 scenarioChosen.textContent = 'Topic: ' + sc;
                 scenarioChosen.classList.add('chosen');
                 scenarioNext.hidden = false;
+                const img = document.getElementById('scenario-img');
+                const src = SCENARIO_IMAGES[sc];
+                document.getElementById('scenario-image').hidden = false;
+                img.hidden = !src;
+                document.getElementById('scenario-img-placeholder').hidden = !!src;
+                if (src) { img.src = src; img.alt = sc; }
             };
             row.appendChild(btn);
             scenarioList.appendChild(row);
