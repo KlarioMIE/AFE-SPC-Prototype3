@@ -524,6 +524,8 @@
         .controls .reset { grid-column: 1 / -1; background: #f3f4f6; color: #000; font-size: 0.8rem; letter-spacing: 0.15em; padding: 0.5rem; }
         .pairs { width: 100%; text-align: center; background: #eef2ff; border: 2px dashed #c7d2fe; border-radius: 1.5rem; padding: 0.9rem; }
         .pairs small { display: block; font-size: 0.65rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; color: #818cf8; margin-bottom: 0.25rem; }
+        .pairs .reminder { display: block; font-size: 1.1rem; color: #312e81; line-height: 1.3; }
+        .pairs .aspect-list { margin-top: 0.5rem; text-align: left; }
         .pairs ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
         .pairs li { font-size: 1rem; font-weight: 900; color: #312e81; line-height: 1.25; }
 
@@ -834,6 +836,7 @@
         const HELP = {
             time: { title: "Round time", text: "Set the minutes for this round, then press START. You can pause and change the time before starting again." },
             controls: { title: "Start, Next and Reset", text: "START runs the clock (press again to pause). NEXT ends this round and moves on. RESET puts the clock back to the time you set." },
+            aspect: { title: "Aspect to plan", text: "When you press START, each team gets one aspect of the plan on their phone. Teams get a different aspect every round, so not all teams talk about the same thing." },
             pairs: { title: "Pairs", text: "In every group, these participants talk to each other this round. Each student sees their participant number on their phone." }
         };
 
@@ -1351,13 +1354,25 @@
             document.getElementById('topics-manual').hidden = topicMode !== 'manual';
             document.getElementById('topics-shuffle').hidden = topicMode !== 'shuffle';
         });
-        document.getElementById('topics-next').onclick = () => showToast('Next screens: coming soon!');
+        document.getElementById('topics-next').onclick = () => goTo('rounds');
 
         // ---------- Rounds: one per screen ----------
 
         const clock = { interval: null, seconds: 120, minutes: 2 };
 
         function startRounds() {
+            if (isPlanning()) {
+                // One round per allowed aspect. Base order: topics already sent first, then the rest
+                // (shuffled in Shuffle mode). Team t gets base[(t + round - 1) % n], so teams rotate.
+                let rest = topicsAvailable.filter(t => !topicsSent.includes(t));
+                if (topicMode === 'shuffle') rest = rest.sort(() => Math.random() - 0.5);
+                state.aspects = topicsSent.concat(rest);
+                state.totalRounds = state.aspects.length;
+                state.aspectsSent = {};
+                state.round = 1;   // Planning has no preparation screen
+                renderRound();
+                return;
+            }
             const lookup = Math.max(4, Math.min(7, Math.min(...state.groups)));
             state.totalRounds = ROUNDS_BY_GROUP_SIZE[lookup] || 3;
             state.pairs = PAIRS_BY_GROUP_SIZE[lookup] || PAIRS_BY_GROUP_SIZE[4];
@@ -1395,6 +1410,39 @@
                 p.appendChild(w);
             }
             return p;
+        }
+
+        function aspectFor(team, round) {
+            const n = state.aspects.length;
+            return state.aspects[(team + round - 1) % n];
+        }
+
+        // Bottom of the Planning timer card: a reminder instead of the pairs
+        function aspectPart() {
+            const box = document.createElement('div');
+            box.className = 'pairs';
+            box.id = 'aspect-box';
+            fillAspectBox(box);
+            return box;
+        }
+        function fillAspectBox(box) {
+            box.innerHTML = '<small>Plan together</small>';
+            const msg = document.createElement('b');
+            msg.className = 'reminder';
+            const sent = state.aspectsSent[state.round];
+            msg.textContent = sent ? 'Discuss and plan the aspect on your phone.' : 'Press START to send each team its aspect.';
+            box.appendChild(msg);
+            // Teacher picks: the projected screen also shows which team plans what
+            if (sent && topicMode === 'manual') {
+                const ul = document.createElement('ul');
+                ul.className = 'aspect-list';
+                state.teams.forEach((_, t) => {
+                    const li = document.createElement('li');
+                    li.textContent = 'Team ' + (t + 1) + ': ' + aspectFor(t, state.round);
+                    ul.appendChild(li);
+                });
+                box.appendChild(ul);
+            }
         }
 
         function renderRound() {
@@ -1459,6 +1507,11 @@
                 }
             };
             start.onclick = () => {
+                if (isPlanning() && !state.aspectsSent[state.round]) {
+                    state.aspectsSent[state.round] = true;
+                    fillAspectBox(document.getElementById('aspect-box'));
+                    showToast('Round ' + state.round + ': aspects sent to every team', true);
+                }
                 if (clock.interval) {
                     stopClock();
                     start.textContent = 'Start';
@@ -1496,14 +1549,16 @@
             };
 
             card.append(h, part(HELP.time, minutes, display), part(HELP.controls, controls));
-            if (!prep) card.append(part(HELP.pairs, pairs));
+            if (isPlanning()) card.append(part(HELP.aspect, aspectPart()));
+            else if (!prep) card.append(part(HELP.pairs, pairs));
         }
 
         // Back from the end screen: return to the last round, not to the start of the rounds
         document.getElementById('end-back').onclick = () => goTo('rounds', true);
 
         document.getElementById('rounds-back').onclick = () => {
-            if (state.round > 0) { state.round--; renderRound(); }
+            if (isPlanning() && state.round === 1) goTo('topics');
+            else if (state.round > (isPlanning() ? 1 : 0)) { state.round--; renderRound(); }
             else goTo('qr');
         };
 
