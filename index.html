@@ -589,13 +589,16 @@
 
         <!-- SCREEN 6: END -->
         <section id="screen-end" class="screen" hidden>
+            <div class="top-bar" style="align-self: stretch; margin-bottom: auto;">
+                <button class="back-btn" id="end-back">← Go back</button>
+            </div>
             <h2>All rounds done!</h2>
             <h3>Send feedback?</h3>
             <div class="feedback">
                 <button class="btn-small fake-door" style="background:#facc15">To teacher</button>
                 <button class="btn-small fake-door" style="background:#22d3ee">To students</button>
             </div>
-            <button class="back-btn" data-go="welcome">Back to start</button>
+            <button class="back-btn" data-go="welcome" style="margin-bottom: auto;">Back to start</button>
         </section>
     </div>
 
@@ -721,7 +724,7 @@
 
         // ---------- Screens ----------
 
-        function goTo(id) {
+        function goTo(id, keepRound = false) {
             closeBubble();
             stopClock();
             document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== 'screen-' + id);
@@ -729,7 +732,7 @@
             // Leaving the welcome screen: the cluster tint stays only there
             if (id === 'welcome' && openCluster !== null) setLayer(CLUSTERS[openCluster]);
             else if (id !== 'welcome') setLayer(null);
-            if (id === 'rounds') startRounds();
+            if (id === 'rounds') { if (keepRound) renderRound(); else startRounds(); }
             document.querySelectorAll('[data-scenario-name]').forEach(e => e.textContent = state.scenario || '');
             window.scrollTo(0, 0);
         }
@@ -1139,6 +1142,9 @@
             card.append(h, part(HELP.time, minutes, display), part(HELP.controls, controls));
             if (!prep) card.append(part(HELP.pairs, pairs));
         }
+
+        // Back from the end screen: return to the last round, not to the start of the rounds
+        document.getElementById('end-back').onclick = () => goTo('rounds', true);
 
         document.getElementById('rounds-back').onclick = () => {
             if (state.round > 0) { state.round--; renderRound(); }
