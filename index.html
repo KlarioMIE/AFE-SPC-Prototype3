@@ -531,22 +531,30 @@
 
         /* ---------- End ---------- */
         /* ---------- Discussion topics ---------- */
-        .mode-pick { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .ask { text-align: center; font-size: clamp(1.2rem, 2.6vw, 1.6rem); font-weight: 700; margin: -0.75rem 0 1.5rem; }
+        .tabs { width: 100%; max-width: 64rem; margin: 0 auto; }
+        .tab-bar { display: flex; gap: 0.5rem; padding-left: 1.5rem; }
         .mode-btn {
-            display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
-            font-family: inherit; font-size: 1.3rem; font-weight: 900;
-            background: #fff; color: #000;
-            border: 3px solid #000; border-radius: 1.25rem; box-shadow: 0 6px 0 #000;
-            padding: 0.8rem 1.6rem; cursor: pointer; min-width: 15rem;
+            font-family: inherit; font-size: clamp(1.1rem, 2.4vw, 1.5rem); font-weight: 900;
+            background: #e5e7eb; color: #4b5563;
+            border: 3px solid #000; border-bottom: none;
+            border-radius: 1.25rem 1.25rem 0 0;
+            padding: 0.8rem 1.6rem; cursor: pointer;
+            position: relative; top: 3px;
         }
-        .mode-btn small { font-size: 0.85rem; font-weight: 700; color: #475569; }
-        .mode-btn[aria-checked="true"] { background: #000; color: #fde047; transform: translateY(3px); box-shadow: 0 3px 0 #000; }
-        .mode-btn[aria-checked="true"] small { color: #e5e7eb; }
-        .mode-btn:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
+        .mode-btn:hover { background: #f3f4f6; color: #000; }
+        .mode-btn:focus-visible { outline: 4px solid #2563eb; outline-offset: 2px; }
+        /* Active tab joins the panel below it */
+        .mode-btn[aria-selected="true"] { background: #fef9c3; color: #000; z-index: 1; padding-bottom: calc(0.8rem + 3px); top: 3px; }
+        .tab-panel {
+            background: #fef9c3; border: 3px solid #000; border-radius: 1.5rem;
+            box-shadow: 6px 6px 0 #000; padding: 1.25rem 1.5rem 1.5rem;
+        }
+        .tab-help { margin: 0 0 1rem; font-size: 1.1rem; font-weight: 700; color: #334155; text-align: center; }
         .now {
             text-align: center; font-size: clamp(1.4rem, 3.5vw, 2.4rem); font-weight: 900;
-            background: #fef9c3; border: 3px dashed #000; border-radius: 1.5rem;
-            padding: 1rem; margin-bottom: 1.5rem; color: #6b7280;
+            background: #fff; border: 3px dashed #000; border-radius: 1.5rem;
+            padding: 1rem; margin-bottom: 1.25rem; color: #6b7280;
         }
         .now.live { background: #a3e635; border-style: solid; color: #000; }
         .now.hidden-topic { background: #1e1b4b; color: #fde047; border-style: solid; }
@@ -572,7 +580,10 @@
             border: 4px solid #000; border-radius: 2rem; box-shadow: 0 8px 0 #000;
             padding: 1.4rem 1rem; cursor: pointer;
         }
-        .report-btn[hidden] { display: none; }
+        .report-wrap { position: relative; }
+        .report-wrap[hidden] { display: none; }
+        .report-wrap > .info-wrap { position: absolute; top: -0.9rem; right: -0.9rem; z-index: 2; }
+        .report-btn small:empty { display: none; }
         .report-btn:active { transform: translateY(4px); box-shadow: 0 4px 0 #000; }
         .report-btn:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
         .report-btn .mic { font-size: 2.6rem; line-height: 1; }
@@ -721,16 +732,22 @@
                 <button class="back-btn" data-go="teams">← Go back</button>
                 <span class="step-tag" data-scenario-name></span>
             </div>
-            <h2 class="prep-title">Discussion topics</h2>
-            <div class="mode-pick" role="radiogroup" aria-label="How to send topics">
-                <button class="mode-btn" role="radio" aria-checked="true" data-mode="manual">👆 Teacher picks<small>Everyone sees the topic</small></button>
-                <button class="mode-btn" role="radio" aria-checked="false" data-mode="shuffle">🔀 Shuffle<small>Topic shows only on phones</small></button>
-            </div>
-            <div class="now" id="topic-now">No topic sent yet</div>
-            <div id="topics-manual" class="topic-list"></div>
-            <div id="topics-shuffle" class="shuffle-box" hidden>
-                <button class="btn-go" id="topic-shuffle">🔀 Shuffle and send</button>
-                <p class="teams-note" id="shuffle-left"></p>
+            <h2 class="prep-title">Time to plan!</h2>
+            <p class="ask">Do you want to choose the topics <b>manually</b> or <b>at random</b>?</p>
+            <div class="tabs">
+                <div class="tab-bar" role="tablist" aria-label="How to choose the topics">
+                    <button class="mode-btn" role="tab" aria-selected="true" aria-checked="true" data-mode="manual" aria-controls="topics-panel">👆 Manually</button>
+                    <button class="mode-btn" role="tab" aria-selected="false" aria-checked="false" data-mode="shuffle" aria-controls="topics-panel">🔀 At random</button>
+                </div>
+                <div class="tab-panel" id="topics-panel" role="tabpanel">
+                    <p class="tab-help" id="tab-help">Tap a topic to send it. Everyone sees it on the screen and on their phones.</p>
+                    <div class="now" id="topic-now">No topic sent yet</div>
+                    <div id="topics-manual" class="topic-list"></div>
+                    <div id="topics-shuffle" class="shuffle-box" hidden>
+                        <button class="btn-go" id="topic-shuffle">🔀 Shuffle and send</button>
+                        <p class="teams-note" id="shuffle-left"></p>
+                    </div>
+                </div>
             </div>
             <div class="teams-actions">
                 <span></span>
@@ -750,11 +767,14 @@
                     <div class="round-card" id="round-card"></div>
                 </div>
                 <!-- Planning: the teacher can end the practice at any round and ask for the reports -->
-                <button class="report-btn" id="request-reports" hidden>
-                    <span class="mic" aria-hidden="true">🎤</span>
-                    <span class="report-label">Request plan reports</span>
-                    <small>Ends the activity. Each team reports its plan by voice.</small>
-                </button>
+                <div class="report-wrap" id="report-wrap" hidden>
+                    <button class="report-btn" id="request-reports">
+                        <span class="mic" aria-hidden="true">🎤</span>
+                        <span class="report-label">Request plan reports</span>
+                        <small></small>
+                    </button>
+                    <span class="info-wrap" id="report-info"></span>
+                </div>
             </div>
         </section>
 
@@ -1381,7 +1401,7 @@
                 now.textContent = 'Now discussing: ' + topic;
             } else {
                 now.className = 'now hidden-topic';
-                now.textContent = '🤫 Topic ' + topicsSent.length + ' sent — check your phone!';
+                now.textContent = '🤫 Topic ' + topicsSent.length + ' is on your phones. Check it out!';
             }
             document.querySelectorAll('.topic-btn').forEach(b => b.classList.toggle('sent', topicsSent.includes(b.textContent)));
             updateShuffleLeft();
@@ -1401,7 +1421,11 @@
         document.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => {
             document.querySelectorAll('.mode-btn').forEach(b => b.setAttribute('aria-checked', 'false'));
             btn.setAttribute('aria-checked', 'true');
+            document.querySelectorAll('.mode-btn').forEach(b => b.setAttribute('aria-selected', b === btn ? 'true' : 'false'));
             topicMode = btn.dataset.mode;
+            document.getElementById('tab-help').textContent = topicMode === 'manual'
+                ? 'Tap a topic to send it. Everyone sees it on the screen and on their phones.'
+                : 'The app picks a topic for you. Students see it only on their phones.';
             document.getElementById('topics-manual').hidden = topicMode !== 'manual';
             document.getElementById('topics-shuffle').hidden = topicMode !== 'shuffle';
         });
@@ -1498,11 +1522,15 @@
 
         // ---------- Plan reports (Planning) ----------
         const reportBtn = document.getElementById('request-reports');
+        document.getElementById('report-info').appendChild(makeInfo('plan reports', {
+            title: 'Request plan reports',
+            text: 'Ends the activity. Each team reports its plan by voice.'
+        }, { inline: true }));
         let confirmTimer = null;
         function resetReportBtn() {
             reportBtn.classList.remove('confirm');
             reportBtn.querySelector('.report-label').textContent = 'Request plan reports';
-            reportBtn.querySelector('small').textContent = 'Ends the activity. Each team reports its plan by voice.';
+            reportBtn.querySelector('small').textContent = '';
         }
         // First tap asks to confirm (no browser pop-up); a second tap within 4 s sends the request
         reportBtn.onclick = () => {
@@ -1569,7 +1597,7 @@
 
         function renderRound() {
             stopClock();
-            reportBtn.hidden = !isPlanning();
+            document.getElementById('report-wrap').hidden = !isPlanning();
             resetReportBtn();
             clock.seconds = clock.minutes * 60;
             const prep = state.round === 0;
