@@ -787,6 +787,7 @@
             <h2 class="prep-title">Teams, report your plan</h2>
             <p class="teams-note">Use the microphone on your phone. Speak, don't type!</p>
             <div class="report-count" id="report-count"></div>
+            <p class="teams-note">Reports appear exactly as the phones transcribe them, without corrections.</p>
             <div class="report-list" id="report-list"></div>
             <div class="teams-actions">
                 <!-- Prototype only: stands in for a team sending its voice report -->
@@ -1547,12 +1548,13 @@
             openReports();
         };
 
+        // Raw speech-to-text, shown exactly as transcribed: mistakes and odd words included, never corrected
         const SAMPLE_REPORTS = [
-            "We are going to the cinema on Saturday at seven. We take the bus and we have twenty dollars each.",
-            "Our plan is a picnic in the park on Sunday. We bring sandwiches and juice, and if it rains we go to my house.",
-            "We want to go to a concert on Friday night. We wear jeans and t-shirts, and we go by metro.",
-            "We plan a dinner at an Italian restaurant. It costs about fifteen dollars and we invite two friends.",
-            "We are going to the beach for the weekend. We share the cost of the car and we take games and music."
+            "we go to the cinema in saturday at seven we take the bus and we have twenty dollar each one",
+            "our plan is a picnic in the park on sunday we bring sandwich and juice and if it rain we go to my house um",
+            "we want go to a concert friday night we were jeans and t-shirt and we go buy metro",
+            "the plan is a dinner in italian restaurant it cost about fifteen dollars and we invite to friends",
+            "we going to the beach the weekend we share the car and we take games and music and uh sunscream"
         ];
         let reports = [];
 
@@ -1579,7 +1581,7 @@
                 st.textContent = text ? '✓ Received' : '🎤 Recording…';
                 h.appendChild(st);
                 const p = document.createElement('p');
-                p.textContent = text || 'Waiting for the voice report';
+                p.textContent = text ? '“' + text + '”' : 'Waiting for the voice report';
                 card.append(h, p);
                 list.appendChild(card);
             });
