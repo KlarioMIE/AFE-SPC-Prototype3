@@ -7,7 +7,7 @@ Built in layers, starting from Prototype 2's teacher screen.
 ## Status
 - [x] Welcome screen: activity clusters that unfold their activities, each with an info bubble (description, suggested CEFR level, tutorial fake door)
 - [x] Scenarios screen (reached from Problem Solving › Role-play)
-- [x] Class size + groups summary, then the QR on its own screen
+- [x] Class size + groups summary (Planning uses pairs, MATRIX_Class_Size-Groups_PLANNING), then the QR on its own screen with a sign-up counter and notices (simulated until phones connect)
 - [x] Preparation screen with timer ("Prepare your role, use the questions on your mobile")
 - [x] Rounds and timers: one round per screen, info bubbles on each part of the timer panel, pairs shown as "Participant N"
 - [ ] Real-time connection with students' phones

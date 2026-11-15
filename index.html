@@ -232,6 +232,8 @@
             text-align: center;
         }
         .toast.show { display: block; }
+        /* Sign-up notices appear at the top so they never cover the buttons */
+        .toast.top { top: 1.5rem; bottom: auto; background: #15803d; border: 3px solid #000; }
 
         .bubble > :last-child { margin-bottom: 0; }
 
@@ -423,6 +425,15 @@
         .qr-card h2 { margin: 0; font-size: clamp(1.5rem, 3.5vw, 2.4rem); font-weight: 900; text-transform: uppercase; color: #2563eb; line-height: 1.15; }
         .qr-card img { width: min(18rem, 70vw); height: min(18rem, 70vw); object-fit: cover; border-radius: 1rem; border: 2px solid #f3f4f6; }
         .qr-card .hint { margin: 0; font-size: 1.1rem; font-weight: 700; color: #475569; }
+        .qr-card .hint.all-in { color: #15803d; font-weight: 900; font-size: 1.3rem; }
+        .joined { width: 100%; display: flex; flex-direction: column; gap: 0.6rem; }
+        .joined-count { font-size: 1.4rem; font-weight: 700; }
+        .joined-count b { font-size: 1.8rem; font-weight: 900; color: #2563eb; }
+        .joined-bar { height: 1rem; border: 3px solid #000; border-radius: 999px; overflow: hidden; background: #f3f4f6; }
+        .joined-bar span { display: block; height: 100%; width: 0; background: #22c55e; transition: width 0.3s; }
+        .joined-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; max-height: 6.5rem; overflow-y: auto; }
+        .joined-list li { font-weight: 700; font-size: 0.95rem; background: #dcfce7; border: 2px solid #000; border-radius: 999px; padding: 0.15rem 0.7rem; }
+        .demo-btn { font-family: inherit; font-size: 0.85rem; font-weight: 700; color: #6b7280; background: none; border: 2px dashed #9ca3af; border-radius: 0.6rem; padding: 0.4rem 0.8rem; cursor: pointer; }
 
         /* ---------- Rounds: one round per screen ---------- */
         #screen-rounds { align-items: center; }
@@ -570,8 +581,16 @@
             <div class="qr-card">
                 <h2>Students, please scan this QR code</h2>
                 <img src="https://lh3.googleusercontent.com/d/1XFtIe_tO6ISipmh-saLrYLGCMbJ-nYYf" alt="QR code for students to join">
-                <p class="hint">When everyone has joined, press Next step.</p>
-                <button class="btn-go" data-go="rounds">Next step →</button>
+                <!-- Sign-up tracker: each student who joins through the QR is announced here -->
+                <div class="joined" id="joined" aria-live="polite">
+                    <div class="joined-count"><b id="joined-n">0</b> of <span id="joined-total">0</span> students joined</div>
+                    <div class="joined-bar"><span id="joined-bar"></span></div>
+                    <ul class="joined-list" id="joined-list"></ul>
+                </div>
+                <p class="hint" id="qr-hint">When everyone has joined, press Next step.</p>
+                <button class="btn-go" id="qr-next">Next step →</button>
+                <!-- Prototype only: stands in for the real-time connection with the phones -->
+                <button class="demo-btn" id="demo-join">+ Simulate a student joining (prototype)</button>
             </div>
         </section>
 
@@ -712,10 +731,11 @@
         let hideTimer = null;
         let toastTimer = null;
 
-        const state = { activity: null, cluster: null, scenario: null, groups: [], round: 1, totalRounds: 0, pairs: [] };
+        const state = { activity: null, cluster: null, scenario: null, groups: [], classSize: 0, round: 1, totalRounds: 0, pairs: [] };
 
-        function showToast(message) {
+        function showToast(message, top = false) {
             toast.textContent = message;
+            toast.classList.toggle('top', top);
             toast.classList.add('show');
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
@@ -953,7 +973,7 @@
         // next: the screen that follows; null = not built yet (fake door).
         const CHOICES = {
             "Role-play": { title: "Choose a scenario", empty: "Choose a scenario to proceed", label: "Topic", list: SCENARIOS, next: 'setup' },
-            "Planning":  { title: "Choose a plan type", empty: "Choose a plan type to proceed", label: "Plan type",  list: PLANS,     next: null }
+            "Planning":  { title: "Choose a plan type", empty: "Choose a plan type to proceed", label: "Plan type",  list: PLANS,     next: 'setup' }
         };
 
         const scenarioList = document.getElementById('scenario-list');
@@ -964,6 +984,8 @@
         function renderChoices(activityName) {
             currentChoices = CHOICES[activityName];
             state.scenario = null;
+            state.classSize = 0;
+            resetJoined();
             document.getElementById('choices-title').textContent = currentChoices.title;
             scenarioChosen.textContent = currentChoices.empty;
             scenarioChosen.classList.remove('chosen');
@@ -1011,7 +1033,8 @@
             document.getElementById('summary').hidden = !ok;
             document.getElementById('setup-next').hidden = !ok;
             if (!ok) return;
-            state.groups = GROUPS_BY_SIZE[val];
+            state.groups = isPlanning() ? pairGroups(val) : GROUPS_BY_SIZE[val];
+            state.classSize = val;
             document.getElementById('total-groups').textContent = state.groups.length;
             const list = document.getElementById('groups-list');
             list.innerHTML = '';
@@ -1027,6 +1050,59 @@
             document.getElementById('summary').hidden = true;
             document.getElementById('setup-next').hidden = true;
         });
+
+        // ---------- QR: sign-up tracker ----------
+
+        // Planning: groups of 2; an odd class has one group of 3 (MATRIX_Class_Size-Groups_PLANNING.xlsx)
+        function isPlanning() { return !!state.activity && state.activity.name === 'Planning'; }
+        function pairGroups(n) { return n % 2 ? [3, ...Array((n - 3) / 2).fill(2)] : Array(n / 2).fill(2); }
+
+        const SAMPLE_NAMES = ["Sofía", "Benjamín", "Martina", "Agustín", "Florencia", "Vicente", "Isidora", "Tomás",
+            "Antonia", "Matías", "Catalina", "Joaquín", "Valentina", "Diego", "Josefa", "Lucas", "Emilia", "Maximiliano",
+            "Javiera", "Cristóbal", "Fernanda", "Ignacio", "Constanza", "Gaspar", "Amanda", "Felipe", "Trinidad", "Nicolás",
+            "Renata", "Alonso", "Maite", "Bastián", "Julieta", "Sebastián", "Rocío", "Gabriel", "Pía", "Andrés", "Camila",
+            "Pablo", "Laura", "Simón", "Elisa", "Hugo", "Ana"];
+        let joinedNames = [];
+
+        function resetJoined() {
+            joinedNames = [];
+            document.getElementById('joined-list').innerHTML = '';
+            updateJoined();
+        }
+
+        function updateJoined() {
+            const total = state.classSize || 0;
+            const n = joinedNames.length;
+            document.getElementById('joined-n').textContent = n;
+            document.getElementById('joined-total').textContent = total;
+            document.getElementById('joined-bar').style.width = (total ? Math.min(100, n / total * 100) : 0) + '%';
+            const hint = document.getElementById('qr-hint');
+            const allIn = total > 0 && n >= total;
+            hint.textContent = allIn ? 'Everyone has joined! Press Next step.' : 'When everyone has joined, press Next step.';
+            hint.classList.toggle('all-in', allIn);
+            document.getElementById('demo-join').hidden = allIn;
+        }
+
+        // Called for every student who signs up through the QR (today: the prototype button)
+        function studentJoined(name) {
+            joinedNames.push(name);
+            const li = document.createElement('li');
+            li.textContent = name;
+            document.getElementById('joined-list').appendChild(li);
+            updateJoined();
+            showToast('✓ ' + name + ' joined (' + joinedNames.length + ' of ' + state.classSize + ')', true);
+        }
+
+        document.getElementById('demo-join').onclick = () => {
+            if (joinedNames.length < state.classSize) studentJoined(SAMPLE_NAMES[joinedNames.length % SAMPLE_NAMES.length]);
+        };
+        document.getElementById('setup-next').addEventListener('click', () => {
+            if (joinedNames.length > state.classSize || document.getElementById('joined-total').textContent != state.classSize) resetJoined();
+        });
+        document.getElementById('qr-next').onclick = () => {
+            if (isPlanning()) showToast('Next screens: coming soon!');
+            else goTo('rounds');
+        };
 
         // ---------- Rounds: one per screen ----------
 
