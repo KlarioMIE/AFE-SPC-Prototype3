@@ -606,7 +606,7 @@
         // available: true sends the activity to the Scenarios flow (tested in Prototype 2 as Role-play).
         const CLUSTERS = [
             { name: "Interview", color: "#22d3ee", activities: [
-                { name: "Prepared", level: "A2–B1", available: true,
+                { name: "Prepared", level: "A2–B1",
                   text: "Students are given the purpose of the interview, and are given time to prepare questions." },
                 { name: "Spontaneous", level: "B1+",
                   text: "Students are given the purpose of the interview, and are prompted with a sequence of different aspects of that context." }
@@ -640,6 +640,9 @@
                   notes: ["A moderator role is optional."] }
             ]},
             { name: "Problem Solving", color: "#a3e635", activities: [
+                // Role-play: text and level from the "burbujas" docx (2026-10-28); flow tested in Prototype 2
+                { name: "Role-play", level: "B–C", available: true,
+                  text: "Students take on specific roles and act out simulated scenes or situations." },
                 { name: "Decision making", level: "B1+",
                   text: "Students work together to find a solution to a dilemma or a hypothetical situation." },
                 { name: "Ranking", level: "A1+",
