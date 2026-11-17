@@ -582,13 +582,25 @@
         }
         .same-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.6rem; margin: 0 0 1rem; font-weight: 900; font-size: 1.1rem; }
         .same-row[hidden] { display: none; }
-        .same-btn {
-            font-family: inherit; font-size: 1rem; font-weight: 900; cursor: pointer;
-            background: #fff; color: #000; border: 3px solid #000; border-radius: 999px;
-            box-shadow: 0 4px 0 #000; padding: 0.45rem 1rem;
+        /* On/off switch: same topic for all teams */
+        .switch {
+            display: inline-flex; align-items: center; gap: 0.7rem; cursor: pointer;
+            font-family: inherit; font-size: 1.1rem; font-weight: 900; color: #000;
+            background: none; border: none; padding: 0.2rem;
         }
-        .same-btn:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
-        .same-btn[aria-checked="true"] { background: #000; color: #fde047; transform: translateY(3px); box-shadow: 0 1px 0 #000; }
+        .switch .track {
+            position: relative; width: 3.6rem; height: 2rem; flex-shrink: 0;
+            background: #d1d5db; border: 3px solid #000; border-radius: 999px; transition: background 0.2s;
+        }
+        .switch .knob {
+            position: absolute; top: 0.15rem; left: 0.15rem; width: 1.45rem; height: 1.45rem;
+            background: #fff; border: 2px solid #000; border-radius: 50%; transition: left 0.2s;
+        }
+        .switch[aria-checked="true"] .track { background: #22c55e; }
+        .switch[aria-checked="true"] .knob { left: calc(100% - 1.6rem); }
+        .switch .state { min-width: 2.2rem; text-align: left; color: #6b7280; }
+        .switch[aria-checked="true"] .state { color: #15803d; }
+        .switch:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; border-radius: 0.5rem; }
         .tab-help { margin: 0 0 1rem; font-size: 1.1rem; font-weight: 700; color: #334155; text-align: center; }
         .now {
             text-align: center; font-size: clamp(1.4rem, 3.5vw, 2.4rem); font-weight: 900;
@@ -782,10 +794,12 @@
                 </div>
                 <div class="tab-panel" id="topics-panel" role="tabpanel">
                     <!-- Manual mode: the teacher decides if all teams plan the same aspect or different ones -->
-                    <div class="same-row" id="same-row" role="radiogroup" aria-label="Topics for the teams">
-                        <span>Each team gets:</span>
-                        <button class="same-btn" role="radio" aria-checked="true" data-same="0">🔀 A different topic</button>
-                        <button class="same-btn" role="radio" aria-checked="false" data-same="1">🟰 The same topic</button>
+                    <div class="same-row" id="same-row">
+                        <button class="switch" id="same-switch" role="switch" aria-checked="false">
+                            <span>Same topic for all teams</span>
+                            <span class="track" aria-hidden="true"><span class="knob"></span></span>
+                            <span class="state" id="same-state">Off</span>
+                        </button>
                     </div>
                     <p class="tab-help" id="tab-help">Tap a topic to send it. Everyone sees it on the screen and on their phones.</p>
                     <div class="now" id="topic-now">No topic sent yet</div>
@@ -1693,10 +1707,11 @@
             document.getElementById('topics-shuffle').hidden = topicMode !== 'shuffle';
         });
         document.getElementById('topics-next').onclick = () => goTo('rounds');
-        document.querySelectorAll('.same-btn').forEach(btn => btn.onclick = () => {
-            document.querySelectorAll('.same-btn').forEach(b => b.setAttribute('aria-checked', String(b === btn)));
-            sameTopic = btn.dataset.same === '1';
-        });
+        document.getElementById('same-switch').onclick = () => {
+            sameTopic = !sameTopic;
+            document.getElementById('same-switch').setAttribute('aria-checked', String(sameTopic));
+            document.getElementById('same-state').textContent = sameTopic ? 'On' : 'Off';
+        };
 
         // ---------- Rounds: one per screen ----------
 
