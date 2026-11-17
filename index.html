@@ -455,6 +455,11 @@
         .joined-bar span { display: block; height: 100%; width: 0; background: #22c55e; transition: width 0.3s; }
         .joined-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; max-height: 6.5rem; overflow-y: auto; }
         .joined-list li { font-weight: 700; font-size: 0.95rem; background: #dcfce7; border: 2px solid #000; border-radius: 999px; padding: 0.15rem 0.7rem; }
+        .qr-box { width: min(18rem, 70vw); height: min(18rem, 70vw); display: flex; align-items: center; justify-content: center; }
+        .qr-box img, .qr-box canvas { width: 100% !important; height: 100% !important; image-rendering: pixelated; }
+        .join-code { margin: -0.5rem 0 0; font-size: 1.05rem; font-weight: 700; color: #475569; overflow-wrap: anywhere; }
+        .join-code b { color: #000; font-size: 1.6rem; letter-spacing: 0.15em; }
+        .join-code .warn-local { display: block; margin-top: 0.4rem; font-size: 0.85rem; color: #b45309; }
         .demo-btn { font-family: inherit; font-size: 0.85rem; font-weight: 700; color: #6b7280; background: none; border: 2px dashed #9ca3af; border-radius: 0.6rem; padding: 0.4rem 0.8rem; cursor: pointer; }
 
         /* ---------- Rounds: one round per screen ---------- */
@@ -702,7 +707,8 @@
             </div>
             <div class="qr-card">
                 <h2>Students, please scan this QR code</h2>
-                <img src="https://lh3.googleusercontent.com/d/1XFtIe_tO6ISipmh-saLrYLGCMbJ-nYYf" alt="QR code for students to join">
+                <div class="qr-box" id="qr-box" role="img" aria-label="QR code for students to join"></div>
+                <p class="join-code" id="join-code"></p>
                 <!-- Sign-up tracker: each student who joins through the QR is announced here -->
                 <div class="joined" id="joined" aria-live="polite">
                     <div class="joined-count"><b id="joined-n">0</b> of <span id="joined-total">0</span> students joined</div>
@@ -820,7 +826,127 @@
     <div id="bubble" class="bubble" role="tooltip"></div>
     <div id="toast" class="toast" role="status"></div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
+        // ---------- Real-time link between the teacher's screen and the phones ----------
+        // Paste the Firebase web config here (Firebase console › Project settings › Your apps).
+        // While it is null, the page works on its own: the "prototype" buttons simulate the phones.
+        const FIREBASE_CONFIG = null;
+
+        // Small store with the same calls for Firebase and for the local (no internet) mode.
+        // Paths are like "sessions/4821/students".
+        function makeStore() {
+            if (FIREBASE_CONFIG && window.firebase) {
+                if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+                const db = firebase.database();
+                return {
+                    live: true,
+                    watch: (path, cb) => db.ref(path).on('value', s => cb(s.val())),
+                    set: (path, val) => db.ref(path).set(val),
+                    push: (path, val) => db.ref(path).push(val).key,
+                    // Writes val only if nothing is there yet (one report per team). Resolves true if it was written.
+                    claim: (path, val) => db.ref(path).transaction(cur => cur === null ? val : undefined).then(r => r.committed)
+                };
+            }
+            // Local mode: an in-memory copy, shared with other tabs of this browser when the page is served from a web address
+            const KEY = 'spc-local-db';
+            let tree = {};
+            try { tree = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { tree = {}; }
+            const listeners = [];
+            const parts = path => path.split('/').filter(Boolean);
+            const get = path => parts(path).reduce((o, k) => (o && typeof o === 'object' && k in o) ? o[k] : null, tree);
+            function notify() {
+                listeners.forEach(l => {
+                    const json = JSON.stringify(get(l.path));
+                    if (json !== l.last) { l.last = json; l.cb(json === undefined ? null : JSON.parse(json)); }
+                });
+            }
+            function write(path, val) {
+                const ks = parts(path);
+                let o = tree;
+                ks.slice(0, -1).forEach(k => { if (!o[k] || typeof o[k] !== 'object') o[k] = {}; o = o[k]; });
+                if (val === null || val === undefined) delete o[ks[ks.length - 1]];
+                else o[ks[ks.length - 1]] = JSON.parse(JSON.stringify(val));
+                try { localStorage.setItem(KEY, JSON.stringify(tree)); } catch (e) { /* storage blocked: this tab only */ }
+                setTimeout(notify, 0);
+            }
+            window.addEventListener('storage', e => {
+                if (e.key !== KEY) return;
+                try { tree = JSON.parse(e.newValue) || {}; } catch (err) { return; }
+                notify();
+            });
+            return {
+                live: false,
+                watch: (path, cb) => { const l = { path, cb, last: '\u0000' }; listeners.push(l); setTimeout(notify, 0); },
+                set: (path, val) => { write(path, val); return Promise.resolve(); },
+                push: (path, val) => { const key = Date.now().toString(36) + Math.random().toString(36).slice(2, 6); write(path + '/' + key, val); return key; },
+                claim: (path, val) => { if (get(path) !== null) return Promise.resolve(false); write(path, val); return Promise.resolve(true); }
+            };
+        }
+
+        // Loads the Firebase scripts only when a config has been pasted above
+        function loadFirebase() {
+            if (!FIREBASE_CONFIG) return Promise.resolve();
+            const add = src => new Promise(res => {
+                const s = document.createElement('script');
+                s.src = src; s.onload = res; s.onerror = res;
+                document.head.appendChild(s);
+            });
+            const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+            return add(base + 'firebase-app-compat.js').then(() => add(base + 'firebase-database-compat.js'));
+        }
+
+        let store = makeStore();
+        loadFirebase().then(() => { if (FIREBASE_CONFIG && window.firebase) store = makeStore(); });
+        let sessionCode = null;      // 4 digits, shown under the QR
+        let sessionKey = null;       // what the session was made for (activity, choice, level, size)
+        const sp = path => 'sessions/' + sessionCode + (path ? '/' + path : '');
+        function publish(path, val) { if (sessionCode) store.set(sp(path), val); }
+
+        // Student page address for the QR: next to this page (works once both are published on https)
+        function studentLink() {
+            const url = new URL('student.html', location.href);
+            url.searchParams.set('s', sessionCode);
+            return url.href;
+        }
+
+        // A new session each time the class is set up again; students join it through the QR
+        function newSession() {
+            sessionCode = String(1000 + Math.floor(Math.random() * 9000));
+            store.set(sp(), {
+                info: { activity: state.activity.name, choice: state.scenario, level: state.level, classSize: state.classSize, created: Date.now() },
+                phase: 'join'
+            });
+            const link = studentLink();
+            const box = document.getElementById('qr-box');
+            box.innerHTML = '';
+            if (window.QRCode) new QRCode(box, { text: link, width: 512, height: 512, correctLevel: QRCode.CorrectLevel.M });
+            else box.textContent = 'QR not available offline';
+            const code = document.getElementById('join-code');
+            code.innerHTML = '';
+            code.append('Or open ', Object.assign(document.createElement('span'), { textContent: link.split('?')[0] }), ' · code ',
+                Object.assign(document.createElement('b'), { textContent: sessionCode }));
+            if (!store.live) code.appendChild(Object.assign(document.createElement('span'), {
+                className: 'warn-local', textContent: 'Phones are not connected yet: use the prototype button below to simulate students.' }));
+            const seen = new Set();
+            const code0 = sessionCode;
+            store.watch(sp('students'), students => {
+                if (code0 !== sessionCode || !students) return;
+                Object.entries(students).sort((a, b) => a[1].t - b[1].t).forEach(([id, st]) => {
+                    if (seen.has(id)) return;
+                    seen.add(id);
+                    studentJoined(st.name, id);
+                });
+            });
+            store.watch(sp('reports'), r => {
+                if (code0 !== sessionCode || !reports.length) return;
+                reports = reports.map((old, t) => (r && r['t' + t]) ? r['t' + t].text : null);
+                const before = renderReports.lastDone || 0;
+                renderReports();
+                const done = reports.filter(Boolean).length;
+                if (done > before) showToast('✓ A team sent its plan report (' + done + ' of ' + reports.length + ')', true);
+            });
+        }
         // Clusters, activities, CEFR levels and bubble texts come from
         // "Definición Actividades_SPC_Homepage - ESTRUCTURA.docx" (Claudio, 2026-11-15).
         // available: true sends the activity to the Scenarios flow (tested in Prototype 2 as Role-play).
@@ -950,6 +1076,8 @@
             if (id === 'welcome' && openCluster !== null) setLayer(CLUSTERS[openCluster]);
             else if (id !== 'welcome') setLayer(null);
             if (id === 'rounds') { if (keepRound) renderRound(); else startRounds(); }
+            const PHASES = { qr: 'join', teams: 'teams', topics: 'topics', rounds: 'rounds', reports: 'reports', end: 'end' };
+            if (PHASES[id]) publish('phase', PHASES[id]);
             document.querySelectorAll('[data-scenario-name]').forEach(e =>
                 e.textContent = (state.scenario || '') + (state.level && id !== 'setup' ? ' · ' + state.level : ''));
             window.scrollTo(0, 0);
@@ -1277,9 +1405,11 @@
             "Renata", "Alonso", "Maite", "Bastián", "Julieta", "Sebastián", "Rocío", "Gabriel", "Pía", "Andrés", "Camila",
             "Pablo", "Laura", "Simón", "Elisa", "Hugo", "Ana"];
         let joinedNames = [];
+        let joinedIds = [];
 
         function resetJoined() {
             joinedNames = [];
+            joinedIds = [];
             document.getElementById('joined-list').innerHTML = '';
             updateJoined();
         }
@@ -1298,8 +1428,9 @@
         }
 
         // Called for every student who signs up through the QR (today: the prototype button)
-        function studentJoined(name) {
+        function studentJoined(name, id) {
             joinedNames.push(name);
+            joinedIds.push(id);
             const li = document.createElement('li');
             li.textContent = name;
             document.getElementById('joined-list').appendChild(li);
@@ -1308,10 +1439,12 @@
         }
 
         document.getElementById('demo-join').onclick = () => {
-            if (joinedNames.length < state.classSize) studentJoined(SAMPLE_NAMES[joinedNames.length % SAMPLE_NAMES.length]);
+            // Prototype: a simulated student signs up exactly like a phone would
+            if (joinedNames.length < state.classSize) store.push(sp('students'), { name: SAMPLE_NAMES[joinedNames.length % SAMPLE_NAMES.length], t: Date.now(), simulated: true });
         };
         document.getElementById('setup-next').addEventListener('click', () => {
-            if (joinedNames.length > state.classSize || document.getElementById('joined-total').textContent != state.classSize) resetJoined();
+            const key = [state.activity.name, state.scenario, state.level, state.classSize].join('|');
+            if (key !== sessionKey || !sessionCode) { sessionKey = key; resetJoined(); newSession(); }
         });
         document.getElementById('qr-next').onclick = () => {
             if (isPlanning()) { buildTeams(); goTo('teams'); }
@@ -1323,16 +1456,19 @@
         // Joined students are shuffled and placed in the groups of the matrix;
         // seats for students who have not joined yet show "Waiting for student N".
         function buildTeams() {
-            const people = joinedNames.slice();
+            const people = joinedNames.map((name, i) => ({ name, id: joinedIds[i] }));
             for (let i = people.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [people[i], people[j]] = [people[j], people[i]];
             }
             let k = 0;
-            state.teams = state.groups.map(size => Array.from({ length: size }, () => {
+            const seats = state.groups.map(size => Array.from({ length: size }, () => {
                 k++;
                 return people[k - 1] || null;
             }));
+            state.teams = seats.map(team => team.map(p => p ? p.name : null));
+            // Phones find their team by their id (saved as text: Firebase drops empty seats from lists)
+            publish('teams', JSON.stringify(seats.map(team => team.filter(Boolean))));
             const list = document.getElementById('teams-list');
             list.innerHTML = '';
             let seat = 0;
@@ -1387,6 +1523,7 @@
             const level = state.level === 'A1–A2' ? 0 : 1;
             topicsAvailable = TOPICS.filter(t => t[2][planIndex]).map(t => t[level]);
             topicsSent = [];
+            publish('topic', null);
             const list = document.getElementById('topics-manual');
             list.innerHTML = '';
             topicsAvailable.forEach(topic => {
@@ -1405,6 +1542,7 @@
         // Sends the topic to every phone. visible = also shown on this (projected) screen.
         function sendTopic(topic, visible) {
             if (!topicsSent.includes(topic)) topicsSent.push(topic);
+            publish('topic', { text: topic, visible, n: topicsSent.length });
             const now = document.getElementById('topic-now');
             if (visible) {
                 now.className = 'now live';
@@ -1455,6 +1593,7 @@
                 state.totalRounds = state.aspects.length;
                 state.aspectsSent = {};
                 state.round = 1;   // Planning has no preparation screen
+                publish('round', null);
                 renderRound();
                 return;
             }
@@ -1579,6 +1718,8 @@
         function openReports() {
             stopClock();
             reports = state.teams.map(() => null);
+            renderReports.lastDone = 0;
+            publish('reports', null);
             showNames = false;
             document.getElementById('toggle-names').textContent = '👁 Show team names';
             document.getElementById('toggle-names').setAttribute('aria-pressed', 'false');
@@ -1589,6 +1730,7 @@
 
         function renderReports() {
             const done = reports.filter(Boolean).length;
+            renderReports.lastDone = done;
             document.getElementById('report-count').textContent = done + ' of ' + reports.length + ' teams have reported';
             const list = document.getElementById('report-list');
             list.innerHTML = '';
@@ -1619,9 +1761,8 @@
         document.getElementById('demo-report').onclick = () => {
             const t = reports.findIndex(x => !x);
             if (t < 0) return;
-            reports[t] = SAMPLE_REPORTS[t % SAMPLE_REPORTS.length];
-            renderReports();
-            showToast('✓ Team ' + (t + 1) + ' sent its plan report', true);
+            // Prototype: a simulated team reports exactly like a phone would (one report per team)
+            store.claim(sp('reports/t' + t), { text: SAMPLE_REPORTS[t % SAMPLE_REPORTS.length], by: state.teams[t].find(Boolean) || 'Student', t: Date.now() });
         };
         document.getElementById('reports-back').onclick = () => goTo('rounds', true);
 
@@ -1691,6 +1832,8 @@
             start.onclick = () => {
                 if (isPlanning() && !state.aspectsSent[state.round]) {
                     state.aspectsSent[state.round] = true;
+                publish('round', { n: state.round, total: state.totalRounds, plan: state.scenario,
+                    aspects: state.teams.map((_, t) => aspectFor(t, state.round)) });
                     fillAspectBox(document.getElementById('aspect-box'));
                     showToast('Round ' + state.round + ': aspects sent to every team', true);
                 }

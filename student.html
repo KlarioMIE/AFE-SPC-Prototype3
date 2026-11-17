@@ -10,8 +10,9 @@
         /*
          * Student page of the Speaking-Practice Center (Prototype 3).
          * Opened from the QR on the teacher's screen: a web page, no app to install.
-         * Today it runs on its own; the dashed "prototype" buttons stand in for
-         * what the teacher's screen will send once both are connected in real time.
+         * Opened with ?s=CODE (from the QR) it follows the teacher's screen in real time.
+         * Opened without a code it runs on its own: the dashed "prototype" buttons
+         * stand in for what the teacher's screen sends.
          */
         * { box-sizing: border-box; }
         body {
@@ -210,7 +211,7 @@
         <section class="screen" id="s-wait" hidden>
             <div class="card">
                 <h1>You're in!</h1>
-                <p class="wait-dots">Wait for your teacher</p>
+                <p class="wait-dots" id="wait-text">Wait for your teacher</p>
             </div>
         </section>
 
@@ -223,6 +224,10 @@
             </div>
             <div class="card">
                 <p>Find your team and sit together. This team stays the same for the whole activity.</p>
+            </div>
+            <div class="card aspect" id="topic-card" hidden>
+                <h2 id="topic-label">Topic</h2>
+                <p class="big" id="topic-text"></p>
             </div>
         </section>
 
@@ -271,6 +276,22 @@
             </div>
         </section>
 
+        <!-- 7. END -->
+        <section class="screen" id="s-end" hidden>
+            <div class="card">
+                <h1>Well done!</h1>
+                <p>The activity is over. Thank you!</p>
+            </div>
+        </section>
+
+        <!-- 0. NO SESSION (wrong or old code) -->
+        <section class="screen" id="s-nosession" hidden>
+            <div class="card">
+                <h1>Session not found</h1>
+                <p>Scan the QR code on your teacher's screen again.</p>
+            </div>
+        </section>
+
         <!-- Global help button, on every screen after joining -->
         <button class="call" id="call" hidden>✋ Call teacher</button>
 
@@ -285,6 +306,74 @@
     <div class="toast" id="toast" role="status"></div>
 
     <script>
+        // ---------- Real-time link between the teacher's screen and the phones ----------
+        // Paste the Firebase web config here (Firebase console › Project settings › Your apps).
+        // While it is null, the page works on its own: the "prototype" buttons simulate the phones.
+        const FIREBASE_CONFIG = null;
+
+        // Small store with the same calls for Firebase and for the local (no internet) mode.
+        // Paths are like "sessions/4821/students".
+        function makeStore() {
+            if (FIREBASE_CONFIG && window.firebase) {
+                if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+                const db = firebase.database();
+                return {
+                    live: true,
+                    watch: (path, cb) => db.ref(path).on('value', s => cb(s.val())),
+                    set: (path, val) => db.ref(path).set(val),
+                    push: (path, val) => db.ref(path).push(val).key,
+                    // Writes val only if nothing is there yet (one report per team). Resolves true if it was written.
+                    claim: (path, val) => db.ref(path).transaction(cur => cur === null ? val : undefined).then(r => r.committed)
+                };
+            }
+            // Local mode: an in-memory copy, shared with other tabs of this browser when the page is served from a web address
+            const KEY = 'spc-local-db';
+            let tree = {};
+            try { tree = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { tree = {}; }
+            const listeners = [];
+            const parts = path => path.split('/').filter(Boolean);
+            const get = path => parts(path).reduce((o, k) => (o && typeof o === 'object' && k in o) ? o[k] : null, tree);
+            function notify() {
+                listeners.forEach(l => {
+                    const json = JSON.stringify(get(l.path));
+                    if (json !== l.last) { l.last = json; l.cb(json === undefined ? null : JSON.parse(json)); }
+                });
+            }
+            function write(path, val) {
+                const ks = parts(path);
+                let o = tree;
+                ks.slice(0, -1).forEach(k => { if (!o[k] || typeof o[k] !== 'object') o[k] = {}; o = o[k]; });
+                if (val === null || val === undefined) delete o[ks[ks.length - 1]];
+                else o[ks[ks.length - 1]] = JSON.parse(JSON.stringify(val));
+                try { localStorage.setItem(KEY, JSON.stringify(tree)); } catch (e) { /* storage blocked: this tab only */ }
+                setTimeout(notify, 0);
+            }
+            window.addEventListener('storage', e => {
+                if (e.key !== KEY) return;
+                try { tree = JSON.parse(e.newValue) || {}; } catch (err) { return; }
+                notify();
+            });
+            return {
+                live: false,
+                watch: (path, cb) => { const l = { path, cb, last: '\u0000' }; listeners.push(l); setTimeout(notify, 0); },
+                set: (path, val) => { write(path, val); return Promise.resolve(); },
+                push: (path, val) => { const key = Date.now().toString(36) + Math.random().toString(36).slice(2, 6); write(path + '/' + key, val); return key; },
+                claim: (path, val) => { if (get(path) !== null) return Promise.resolve(false); write(path, val); return Promise.resolve(true); }
+            };
+        }
+
+        // Loads the Firebase scripts only when a config has been pasted above
+        function loadFirebase() {
+            if (!FIREBASE_CONFIG) return Promise.resolve();
+            const add = src => new Promise(res => {
+                const s = document.createElement('script');
+                s.src = src; s.onload = res; s.onerror = res;
+                document.head.appendChild(s);
+            });
+            const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+            return add(base + 'firebase-app-compat.js').then(() => add(base + 'firebase-database-compat.js'));
+        }
+
         // ---------- Sample data (comes from the teacher's screen once connected) ----------
         const SESSION = {
             plan: "A date",
@@ -318,6 +407,12 @@
         $('join').onclick = () => {
             myName = $('name').value.trim();
             $('who').textContent = myName;
+            if (live.code) {
+                live.me = store.push(live.path('students'), { name: myName, t: Date.now() });
+                try { localStorage.setItem('spc-me-' + live.code, JSON.stringify({ id: live.me, name: myName })); } catch (e) { /* not saved: fine */ }
+                render();
+                return;
+            }
             show('s-wait');
         };
 
@@ -433,8 +528,15 @@
             $('send-row').hidden = false;
         };
         $('confirm-yes').onclick = () => {
-            // Here the transcript goes to the teacher's screen, exactly as recognised,
-            // and the report option closes for the whole team
+            // The transcript goes to the teacher's screen exactly as recognised,
+            // and the report option closes for the whole team (only the first report counts)
+            if (live.code) {
+                $('confirm-yes').disabled = true;
+                live.sentByMe = true;
+                store.claim(live.path('reports/t' + live.team), { text: finalText, by: myName, t: Date.now() })
+                    .then(ok => { $('confirm-yes').disabled = false; if (!ok) live.sentByMe = false; render(); });
+                return;
+            }
             $('sent-by').textContent = "Your team's report is on its way. Look at the screen.";
             show('s-sent');
         };
@@ -443,6 +545,88 @@
             if (listening && rec) rec.abort();
             $('sent-by').textContent = name + " already sent your team's report. Look at the screen.";
             show('s-sent');
+        }
+
+        // ---------- Real time: follow the teacher's screen ----------
+        const live = {
+            code: new URLSearchParams(location.search).get('s'),
+            me: null, team: -1, session: undefined, roundShown: 0, sentByMe: false,
+            path(p) { return 'sessions/' + this.code + (p ? '/' + p : ''); }
+        };
+        let store = null;
+        let current = 's-join';
+        function go(id) { if (current !== id) { current = id; show(id); } }
+
+        function render() {
+            const s = live.session;
+            if (s === undefined) return;
+            if (!s || !s.info) { go('s-nosession'); return; }
+            const students = s.students || {};
+            if (!live.me) { go('s-join'); return; }
+            if (!students[live.me]) { go('s-wait'); return; }   // just joined: the sign-up is on its way
+            myName = students[live.me].name;
+            $('who').textContent = myName;
+            let teams = [];
+            try { teams = JSON.parse(s.teams || '[]'); } catch (e) { teams = []; }
+            live.team = teams.findIndex(t => t.some(m => m.id === live.me));
+            const inTeam = live.team >= 0;
+            const phase = s.phase || 'join';
+            const planning = s.info.activity === 'Planning';
+            SESSION.plan = s.info.choice;
+
+            if (phase === 'end') { go('s-end'); return; }
+            if (phase === 'reports' && inTeam) {
+                const r = s.reports && s.reports['t' + live.team];
+                if (r) {
+                    if (listening && rec) rec.abort();
+                    $('sent-by').textContent = r.by === myName && live.sentByMe
+                        ? "Your team's report is on its way. Look at the screen."
+                        : r.by + " already sent your team's report. Look at the screen.";
+                    go('s-sent');
+                } else if (current !== 's-report') {
+                    finalText = ''; renderTranscript('');
+                    $('confirm').hidden = true; $('send-row').hidden = false; $('no-speech').hidden = true;
+                    go('s-report');
+                    toast('Your teacher asked for your plan report');
+                }
+                return;
+            }
+            const round = s.round;
+            if (phase === 'rounds' && planning && inTeam && round && round.aspects) {
+                if (current !== 's-aspect' || live.roundShown !== round.n) {
+                    live.roundShown = round.n;
+                    $('round-tag').textContent = 'Round ' + round.n + ' of ' + round.total;
+                    $('plan-type').textContent = 'Plan: ' + round.plan;
+                    $('aspect').textContent = round.aspects[live.team];
+                    current = 's-aspect'; show('s-aspect');
+                    if (navigator.vibrate) navigator.vibrate(200);
+                }
+                return;
+            }
+            if (inTeam && phase !== 'join') {
+                SESSION.team = live.team + 1;
+                SESSION.teammates = teams[live.team].filter(m => m.id !== live.me).map(m => m.name);
+                const topic = s.topic;
+                $('topic-card').hidden = !topic;
+                if (topic) {
+                    $('topic-label').textContent = topic.visible ? 'Your teacher chose' : 'Topic ' + topic.n;
+                    $('topic-text').textContent = topic.text;
+                }
+                const key = JSON.stringify(teams[live.team]);
+                if (current !== 's-team' || live.teamKey !== key) { live.teamKey = key; showTeam(); current = 's-team'; }
+                return;
+            }
+            $('wait-text').textContent = phase === 'join' || phase === 'teams' ? 'Wait for your teacher' : 'Look at the screen';
+            go('s-wait');
+        }
+
+        if (live.code) {
+            $('demo').hidden = true;
+            try { live.me = (JSON.parse(localStorage.getItem('spc-me-' + live.code)) || {}).id || null; } catch (e) { live.me = null; }
+            loadFirebase().then(() => {
+                store = makeStore();
+                store.watch(live.path(), s => { live.session = s; render(); });
+            });
         }
 
         // ---------- Call teacher (global) ----------
