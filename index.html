@@ -459,6 +459,7 @@
         .qr-box img, .qr-box canvas { width: 100% !important; height: 100% !important; image-rendering: pixelated; }
         .join-code { margin: -0.5rem 0 0; font-size: 1.05rem; font-weight: 700; color: #475569; overflow-wrap: anywhere; }
         .join-code b { color: #000; font-size: 1.6rem; letter-spacing: 0.15em; }
+        .join-code a { color: #2563eb; }
         .join-code .warn-local { display: block; margin-top: 0.4rem; font-size: 0.85rem; color: #b45309; }
         .demo-btn { font-family: inherit; font-size: 0.85rem; font-weight: 700; color: #6b7280; background: none; border: 2px dashed #9ca3af; border-radius: 0.6rem; padding: 0.4rem 0.8rem; cursor: pointer; }
 
@@ -932,7 +933,7 @@
             else box.textContent = 'QR not available offline';
             const code = document.getElementById('join-code');
             code.innerHTML = '';
-            code.append('Or open ', Object.assign(document.createElement('span'), { textContent: link.split('?')[0] }), ' · code ',
+            code.append('Or open ', Object.assign(document.createElement('a'), { textContent: link.split('?')[0], href: link, target: '_blank', rel: 'noopener' }), ' · code ',
                 Object.assign(document.createElement('b'), { textContent: sessionCode }));
             if (!store.live) code.appendChild(Object.assign(document.createElement('span'), {
                 className: 'warn-local', textContent: 'Phones are not connected yet: use the prototype button below to simulate students.' }));
