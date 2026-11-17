@@ -214,6 +214,10 @@
         }
         .tutorial-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; }
 
+        /* Fake doors (not built yet): dimmed so the teacher sees they are not ready */
+        .fake-door { opacity: 0.45; filter: saturate(0.35); }
+        .fake-door:hover, .fake-door:focus-visible { opacity: 0.6; }
+
         /* Short message for fake doors */
         .toast {
             position: fixed;
@@ -980,7 +984,7 @@
             if (c.level) add('div', 'level', 'Suggested CEFR level: ' + c.level);
             if (c.tutorial) {
                 // Fake door: the quick YouTube tutorial does not exist yet
-                const t = add('button', 'tutorial-btn');
+                const t = add('button', 'tutorial-btn fake-door');
                 t.innerHTML = '<span aria-hidden="true">▶</span> Quick tutorial';
                 t.onclick = () => showToast('Video tutorial coming soon!');
             }
@@ -1068,6 +1072,7 @@
                     goTo('scenarios');
                 } else showToast('Coming soon!');
             };
+            if (!activity.available) { btn.classList.add('fake-door'); btn.title = 'Coming soon'; }
             card.appendChild(btn);
             card.appendChild(makeInfo(activity.name, {
                 tag: cluster.name, title: activity.name, text: activity.text,
@@ -1146,6 +1151,8 @@
                 btn.setAttribute('aria-controls', 'cluster-panel');
                 btn.onclick = () => { if (openCluster === i) closeCluster(); else openClusterAt(i); };
             } else {
+                btn.classList.add('fake-door');
+                btn.title = 'Coming soon';
                 btn.onclick = () => showToast('Coming soon!');
             }
             card.appendChild(btn);
