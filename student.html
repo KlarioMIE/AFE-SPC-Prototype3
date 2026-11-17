@@ -138,6 +138,8 @@
         .row .btn { font-size: 1.1rem; }
         .warn { font-weight: 700; color: #b45309; background: #fef3c7; border: 2px solid #000; border-radius: 1rem; padding: 0.6rem 0.8rem; text-align: left; font-size: 0.95rem; }
 
+        .confirm { background: #fef3c7; text-align: left; }
+
         /* ---------- Call teacher (on every screen) ---------- */
         .call {
             margin-top: auto;
@@ -247,9 +249,17 @@
                 <div class="transcript" id="transcript" aria-live="polite"></div>
             </div>
             <div class="warn" id="no-speech" hidden></div>
-            <div class="row">
+            <div class="row" id="send-row">
                 <button class="btn secondary" id="redo" disabled>↺ Record again</button>
                 <button class="btn" id="send" disabled>Send ✓</button>
+            </div>
+            <!-- Only one report per team: confirm before sending (no browser pop-up) -->
+            <div class="card confirm" id="confirm" hidden>
+                <p><b>Send this report for your whole team?</b><br>Only one report per team. After this, nobody in your team can record again.</p>
+                <div class="row" style="margin-top: 0.9rem;">
+                    <button class="btn secondary" id="confirm-no">Not yet</button>
+                    <button class="btn" id="confirm-yes">Yes, send</button>
+                </div>
             </div>
         </section>
 
@@ -257,7 +267,7 @@
         <section class="screen" id="s-sent" hidden>
             <div class="card">
                 <h1>Report sent!</h1>
-                <p>Great work. Look at the screen.</p>
+                <p id="sent-by">Your team's report is on its way. Look at the screen.</p>
             </div>
         </section>
 
@@ -269,6 +279,7 @@
             Prototype: simulate the teacher's screen<br>
             <button id="demo-next">Teacher: next step →</button>
             <button id="demo-report">Teacher: request plan reports</button>
+            <button id="demo-mate">A teammate sends the report</button>
         </div>
     </div>
     <div class="toast" id="toast" role="status"></div>
@@ -414,9 +425,25 @@
         };
         $('redo').onclick = () => { finalText = ''; renderTranscript(''); $('mic-state').textContent = 'Tap to speak'; };
         $('send').onclick = () => {
-            // Here the transcript goes to the teacher's screen, exactly as recognised
+            $('send-row').hidden = true;
+            $('confirm').hidden = false;
+        };
+        $('confirm-no').onclick = () => {
+            $('confirm').hidden = true;
+            $('send-row').hidden = false;
+        };
+        $('confirm-yes').onclick = () => {
+            // Here the transcript goes to the teacher's screen, exactly as recognised,
+            // and the report option closes for the whole team
+            $('sent-by').textContent = "Your team's report is on its way. Look at the screen.";
             show('s-sent');
         };
+        // A teammate sent the team's report first: the microphone closes for everyone else
+        function teammateSent(name) {
+            if (listening && rec) rec.abort();
+            $('sent-by').textContent = name + " already sent your team's report. Look at the screen.";
+            show('s-sent');
+        }
 
         // ---------- Call teacher (global) ----------
         $('call').onclick = () => {
@@ -435,7 +462,13 @@
             if (current === 's-aspect') { show('s-report'); toast('Your teacher asked for your plan report'); return; }
             toast('End of the prototype flow');
         };
+        $('demo-mate').onclick = () => {
+            if ($('s-report').hidden) { toast('First: Teacher: request plan reports'); return; }
+            teammateSent(SESSION.teammates[0]);
+        };
         $('demo-report').onclick = () => {
+            $('confirm').hidden = true;
+            $('send-row').hidden = false;
             if (!myName) { toast('Write your name and join first'); return; }
             show('s-report');
             toast('Your teacher asked for your plan report');
