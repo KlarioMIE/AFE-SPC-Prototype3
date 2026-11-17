@@ -1859,6 +1859,8 @@
                     if (clock.seconds <= 0) {
                         stopClock();
                         display.textContent = 'TIME!';
+                        // Every phone gets a "Time's up" alert
+                        publish('timeup', { round: state.round, at: Date.now() });
                         display.classList.add('done');
                         start.textContent = 'Start';
                         start.classList.remove('running');

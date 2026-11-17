@@ -141,6 +141,18 @@
 
         .confirm { background: #fef3c7; text-align: left; }
 
+        /* ---------- Time's up alert (sent when the teacher's timer ends) ---------- */
+        .timeup {
+            position: fixed; inset: 0; z-index: 30;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+        }
+        .timeup[hidden] { display: none; }
+        .timeup .card { background: #ef4444; color: #fff; max-width: 24rem; width: 100%; animation: pop 0.35s ease-out; }
+        .timeup .card h1 { color: #fff; font-size: 2.4rem; }
+        .timeup .card p { font-weight: 700; margin-bottom: 1rem; }
+        @keyframes pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
         /* ---------- Call teacher (on every screen) ---------- */
         .call {
             margin-top: auto;
@@ -301,9 +313,17 @@
             <button id="demo-next">Teacher: next step →</button>
             <button id="demo-report">Teacher: request plan reports</button>
             <button id="demo-mate">A teammate sends the report</button>
+            <button id="demo-timeup">Teacher: time is up</button>
         </div>
     </div>
     <div class="toast" id="toast" role="status"></div>
+    <div class="timeup" id="timeup" role="alertdialog" aria-labelledby="timeup-title" hidden>
+        <div class="card">
+            <h1 id="timeup-title">⏰ Time's up!</h1>
+            <p>Stop and look at the screen.</p>
+            <button class="btn secondary" id="timeup-ok">OK</button>
+        </div>
+    </div>
 
     <script>
         // ---------- Real-time link between the teacher's screen and the phones ----------
@@ -558,7 +578,7 @@
         // ---------- Real time: follow the teacher's screen ----------
         const live = {
             code: new URLSearchParams(location.search).get('s'),
-            me: null, team: -1, session: undefined, roundShown: 0, sentByMe: false,
+            me: null, team: -1, session: undefined, roundShown: 0, sentByMe: false, timeupSeen: undefined,
             path(p) { return 'sessions/' + this.code + (p ? '/' + p : ''); }
         };
         let store = null;
@@ -569,6 +589,18 @@
             const s = live.session;
             if (s === undefined) return;
             if (!s || !s.info) { go('s-nosession'); return; }
+            // Time's up: alert once per timer end (an old alert is not shown when the page opens)
+            const tu = s.timeup ? s.timeup.at : null;
+            if (live.timeupSeen === undefined) live.timeupSeen = tu;
+            else if (tu && tu !== live.timeupSeen) {
+                live.timeupSeen = tu;
+                if (live.me && s.phase !== 'reports' && s.phase !== 'end') {
+                    $('timeup').hidden = false;
+                    $('timeup-ok').focus();
+                    if (navigator.vibrate) navigator.vibrate([400, 150, 400]);
+                }
+            }
+            if (s.phase === 'reports' || s.phase === 'end') $('timeup').hidden = true;
             const students = s.students || {};
             if (!live.me) { go('s-join'); return; }
             if (!students[live.me]) { go('s-wait'); return; }   // just joined: the sign-up is on its way
@@ -606,6 +638,7 @@
                     $('round-tag').textContent = 'Round ' + round.n + ' of ' + round.total;
                     $('plan-type').textContent = 'Plan: ' + round.plan;
                     $('aspect').textContent = round.aspects[live.team];
+                    $('timeup').hidden = true;   // a new round starts: the old alert goes away
                     current = 's-aspect'; show('s-aspect');
                     if (navigator.vibrate) navigator.vibrate(200);
                 }
@@ -636,6 +669,13 @@
                 store.watch(live.path(), s => { live.session = s; render(); });
             });
         }
+
+        $('timeup-ok').onclick = () => { $('timeup').hidden = true; };
+        $('demo-timeup').onclick = () => {
+            if (!myName) { toast('Write your name and join first'); return; }
+            $('timeup').hidden = false;
+            if (navigator.vibrate) navigator.vibrate([400, 150, 400]);
+        };
 
         // ---------- Call teacher (global) ----------
         $('call').onclick = () => {
