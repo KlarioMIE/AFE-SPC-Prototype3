@@ -793,8 +793,8 @@
                     <button class="mode-btn" role="tab" aria-selected="false" aria-checked="false" data-mode="shuffle" aria-controls="topics-panel">🔀 At random</button>
                 </div>
                 <div class="tab-panel" id="topics-panel" role="tabpanel">
-                    <!-- Manual mode: the teacher decides if all teams plan the same aspect or different ones -->
-                    <div class="same-row" id="same-row">
+                    <!-- At random: the teacher decides if all teams plan the same aspect or different ones. Manually: all teams get the topic the teacher taps -->
+                    <div class="same-row" id="same-row" hidden>
                         <button class="switch" id="same-switch" role="switch" aria-checked="false">
                             <span>Same topic for all teams</span>
                             <span class="track" aria-hidden="true"><span class="knob"></span></span>
@@ -1144,7 +1144,7 @@
         const HELP = {
             time: { title: "Round time", text: "Set the minutes for this round, then press START. You can pause and change the time before starting again." },
             controls: { title: "Start, Next and Reset", text: "START runs the clock (press again to pause). NEXT ends this round and moves on. RESET puts the clock back to the time you set." },
-            aspect: { title: "Aspect to plan", text: "When you press START, each team gets one aspect of the plan on their phone. In Manual mode you choose if all teams get the same aspect or a different one." },
+            aspect: { title: "Aspect to plan", text: "When you press START, each team gets one aspect of the plan on their phone. Manually: all teams get the same aspect. At random: you choose if they get the same aspect or a different one." },
             pairs: { title: "Pairs", text: "In every group, these participants talk to each other this round. Each student sees their participant number on their phone." }
         };
 
@@ -1703,7 +1703,7 @@
                 ? 'Tap a topic to send it. Everyone sees it on the screen and on their phones.'
                 : 'The app picks a topic for you. Students see it only on their phones.';
             document.getElementById('topics-manual').hidden = topicMode !== 'manual';
-            document.getElementById('same-row').hidden = topicMode !== 'manual';
+            document.getElementById('same-row').hidden = topicMode !== 'shuffle';
             document.getElementById('topics-shuffle').hidden = topicMode !== 'shuffle';
         });
         document.getElementById('topics-next').onclick = () => goTo('rounds');
@@ -1770,9 +1770,9 @@
             return p;
         }
 
-        // Same topic for all teams (manual mode only) or a different one per team, rotating
+        // Manually: all teams get the same aspect. At random: same (switch On) or a different one per team, rotating
         let sameTopic = false;
-        function allSame() { return sameTopic && topicMode === 'manual'; }
+        function allSame() { return topicMode === 'manual' || sameTopic; }
         function aspectFor(team, round) {
             const n = state.aspects.length;
             if (allSame()) return state.aspects[(round - 1) % n];
@@ -1795,20 +1795,12 @@
             msg.textContent = sent ? 'Discuss and plan the aspect on your phone.' : 'Press START to send each team its aspect.';
             box.appendChild(msg);
             // Teacher picks: the projected screen also shows which team plans what
-            if (sent && allSame()) {
+            // The projector shows the aspect only in Manual mode (At random: phones only)
+            if (sent && topicMode === 'manual') {
                 const one = document.createElement('div');
                 one.className = 'aspect-list';
                 one.textContent = 'All teams: ' + aspectFor(0, state.round);
                 box.appendChild(one);
-            } else if (sent && topicMode === 'manual') {
-                const ul = document.createElement('ul');
-                ul.className = 'aspect-list';
-                state.teams.forEach((_, t) => {
-                    const li = document.createElement('li');
-                    li.textContent = 'Team ' + (t + 1) + ': ' + aspectFor(t, state.round);
-                    ul.appendChild(li);
-                });
-                box.appendChild(ul);
             }
         }
 
