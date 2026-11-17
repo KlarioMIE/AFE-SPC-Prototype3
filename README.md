@@ -10,7 +10,9 @@ Built in layers, starting from Prototype 2's teacher screen.
 - [x] Class size + groups summary (Planning uses pairs, MATRIX_Class_Size-Groups_PLANNING), then the QR on its own screen with a sign-up counter and notices (simulated until phones connect)
 - [x] Preparation screen with timer ("Prepare your role, use the questions on your mobile")
 - [x] Rounds and timers: one round per screen, info bubbles on each part of the timer panel, pairs shown as "Participant N"
-- [ ] Real-time connection with students' phones
+- [x] Student web page (`student.html`, no app): join with name, team, aspect per round, voice-only plan report, Call teacher. Teacher actions simulated with dashed prototype buttons
+- [ ] Real-time connection between teacher screen and students' phones
+- [ ] Publish on https (needed for the microphone)
 
 ## How to view
 Open `index.html` in a browser.
