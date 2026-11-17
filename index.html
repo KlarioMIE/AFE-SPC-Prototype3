@@ -831,7 +831,15 @@
         // ---------- Real-time link between the teacher's screen and the phones ----------
         // Paste the Firebase web config here (Firebase console › Project settings › Your apps).
         // While it is null, the page works on its own: the "prototype" buttons simulate the phones.
-        const FIREBASE_CONFIG = null;
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyABjG_5bZ-ZT7E7aZvbYDfZWr5X6HZYTng",
+            authDomain: "spc-prototype3.firebaseapp.com",
+            databaseURL: "https://spc-prototype3-default-rtdb.firebaseio.com",
+            projectId: "spc-prototype3",
+            storageBucket: "spc-prototype3.firebasestorage.app",
+            messagingSenderId: "18791534503",
+            appId: "1:18791534503:web:9a5adbe35bc7462a8ef082"
+        };
 
         // Small store with the same calls for Firebase and for the local (no internet) mode.
         // Paths are like "sessions/4821/students".
