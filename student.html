@@ -57,7 +57,7 @@
         .card h1 { margin: 0 0 0.5rem; font-size: 1.8rem; font-weight: 900; color: #2563eb; line-height: 1.15; }
         .card h2 { margin: 0 0 0.4rem; font-size: 1.1rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; color: #6b7280; }
         .card p { margin: 0; font-size: 1.1rem; line-height: 1.4; }
-        .big { font-size: 2rem; font-weight: 900; line-height: 1.15; color: #000; margin: 0.25rem 0; }
+        .big, .card .big { font-size: 2rem; font-weight: 900; line-height: 1.15; color: #000; margin: 0.25rem 0; }
         .tag { display: inline-block; font-weight: 900; font-size: 0.9rem; background: #000; color: #fde047; padding: 0.2rem 0.7rem; border-radius: 0.5rem; margin-bottom: 0.6rem; }
 
         input[type="text"] {
@@ -97,6 +97,13 @@
         .team-list li.me { background: #fde047; }
 
         .aspect { background: #a3e635; }
+        .role-desc { text-align: left; margin-top: 0.6rem !important; }
+        .prep-list { text-align: left; margin: 0.5rem 0 0; padding-left: 1.3rem; font-size: 1.05rem; line-height: 1.45; }
+        .prep-list li + li { margin-top: 0.4rem; }
+        .partner-list { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.6rem; }
+        .partner-list li { background: #fde047; border: 3px solid #000; border-radius: 1.25rem; padding: 0.6rem 0.8rem; }
+        .partner-list b { display: block; font-size: 1.8rem; font-weight: 900; line-height: 1.15; }
+        .partner-list small { font-size: 0.95rem; font-weight: 700; color: #334155; }
         .wait-dots::after { content: "…"; animation: dots 1.4s steps(3) infinite; display: inline-block; width: 1.2em; text-align: left; overflow: hidden; vertical-align: bottom; }
         @keyframes dots { 0% { width: 0.3em; } 100% { width: 1.2em; } }
 
@@ -253,6 +260,32 @@
             </div>
             <div class="card aspect">
                 <p><b>Discuss and plan this aspect together.</b> Speak in English!</p>
+            </div>
+        </section>
+
+        <!-- 4b. ROLE CARD (Role-play: preparation) -->
+        <section class="screen" id="s-role" hidden>
+            <div class="card">
+                <span class="tag" id="role-tag"></span>
+                <h2 id="role-scenario"></h2>
+                <p class="big" id="role-name"></p>
+                <p class="role-desc" id="role-desc"></p>
+            </div>
+            <div class="card aspect" id="prep-card" hidden>
+                <h2>Prepare your role</h2>
+                <ul class="prep-list" id="prep-list"></ul>
+            </div>
+        </section>
+
+        <!-- 4c. PARTNER (Role-play: one per round) -->
+        <section class="screen" id="s-partner" hidden>
+            <div class="card">
+                <span class="tag" id="partner-tag"></span>
+                <h2>Talk to</h2>
+                <ul class="partner-list" id="partner-list"></ul>
+            </div>
+            <div class="card">
+                <p>You are <b id="partner-me"></b></p>
             </div>
         </section>
 
@@ -637,6 +670,7 @@
                 return;
             }
             const round = s.round;
+            if (!planning && phase === 'rounds' && s.rp && round) { if (renderRolePlay(s, round)) return; }
             if (phase === 'rounds' && planning && inTeam && round && round.aspects) {
                 if (current !== 's-aspect' || live.roundShown !== round.n) {
                     live.roundShown = round.n;
@@ -664,6 +698,63 @@
             }
             $('wait-text').textContent = phase === 'join' || phase === 'teams' ? 'Wait for your teacher' : 'Look at the screen';
             go('s-wait');
+        }
+
+        // Role-play: role card in preparation (questions after START), partner in each round (after START)
+        function renderRolePlay(s, round) {
+            let rp;
+            try { rp = JSON.parse(s.rp); } catch (e) { return false; }
+            const group = rp.groups.find(g => g.some(m => m.id === live.me));
+            if (!group) return false;
+            const me = group.find(m => m.id === live.me);
+            const role = n => rp.roles[n - 1] || ['Participant ' + n, ''];
+            const myRole = role(me.p);
+            const showRole = () => {
+                $('role-tag').textContent = 'Participant ' + me.p;
+                $('role-scenario').textContent = rp.scenario;
+                $('role-name').textContent = myRole[0];
+                $('role-desc').textContent = myRole[1];
+                const ul = $('prep-list');
+                ul.innerHTML = '';
+                (rp.prep[me.p - 1] || []).forEach(q => { const li = document.createElement('li'); li.textContent = q; ul.appendChild(li); });
+            };
+            const key = round.n + '|' + round.started;
+            if (round.n === 0 || !round.started) {
+                // Preparation, or a round that has not started yet: the role card
+                showRole();
+                $('prep-card').hidden = !(round.n === 0 && round.started);
+                if (current !== 's-role' || live.rpKey !== key) {
+                    live.rpKey = key; current = 's-role'; show('s-role');
+                    if (round.started && navigator.vibrate) navigator.vibrate(200);
+                }
+                return true;
+            }
+            // Round started: who to talk to (pairs of this group's size; a trio gives two partners)
+            const table = rp.pairs[group.length] || [];
+            const line = table[round.n - 1] || '';
+            const sets = line.split('/').map(g => g.replace(/[()\sP]/g, '').split('-').map(Number));
+            const mine = sets.find(set => set.includes(me.p)) || [];
+            const ul = $('partner-list');
+            ul.innerHTML = '';
+            mine.filter(n => n !== me.p).forEach(n => {
+                const mate = group.find(m => m.p === n);
+                const li = document.createElement('li');
+                const b = document.createElement('b');
+                b.textContent = mate ? mate.name : 'Participant ' + n;
+                const small = document.createElement('small');
+                small.textContent = 'Participant ' + n + ' · ' + role(n)[0];
+                li.append(b, small);
+                ul.appendChild(li);
+            });
+            if (!ul.children.length) ul.innerHTML = '<li><b>Look at the screen</b></li>';
+            $('partner-tag').textContent = 'Round ' + round.n + ' of ' + round.total;
+            $('partner-me').textContent = myRole[0];
+            if (current !== 's-partner' || live.rpKey !== key) {
+                live.rpKey = key; current = 's-partner'; show('s-partner');
+                $('timeup').hidden = true;
+                if (navigator.vibrate) navigator.vibrate(200);
+            }
+            return true;
         }
 
         if (live.code) {
