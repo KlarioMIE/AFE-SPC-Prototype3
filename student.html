@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>SPC Student</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /*
+         * Student page of the Speaking-Practice Center (Prototype 3).
+         * Opened from the QR on the teacher's screen: a web page, no app to install.
+         * Opened with ?s=CODE (from the QR) it follows the teacher's screen in real time.
+         * Opened without a code it runs on its own: the dashed "prototype" buttons
+         * stand in for what the teacher's screen sends.
+         */
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Lexend', sans-serif;
+            background: #4f46e5;
+            color: #1e293b;
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+        .phone {
+            max-width: 30rem;
+            margin: 0 auto;
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem 1rem 1.25rem;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            color: #fff;
+            margin-bottom: 1rem;
+        }
+        header .brand { font-weight: 900; font-size: 1.05rem; letter-spacing: -0.02em; }
+        header .who { font-weight: 700; font-size: 0.95rem; opacity: 0.9; }
+
+        .screen { flex-grow: 1; display: flex; flex-direction: column; gap: 1rem; }
+        .screen[hidden] { display: none; }
+
+        .card {
+            background: #fff;
+            border: 3px solid #000;
+            border-radius: 1.75rem;
+            box-shadow: 6px 6px 0 #000;
+            padding: 1.4rem 1.25rem;
+            text-align: center;
+        }
+        .card h1 { margin: 0 0 0.5rem; font-size: 1.8rem; font-weight: 900; color: #2563eb; line-height: 1.15; }
+        .card h2 { margin: 0 0 0.4rem; font-size: 1.1rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; color: #6b7280; }
+        .card p { margin: 0; font-size: 1.1rem; line-height: 1.4; }
+        .big, .card .big { font-size: 2rem; font-weight: 900; line-height: 1.15; color: #000; margin: 0.25rem 0; }
+        .tag { display: inline-block; font-weight: 900; font-size: 0.9rem; background: #000; color: #fde047; padding: 0.2rem 0.7rem; border-radius: 0.5rem; margin-bottom: 0.6rem; }
+
+        input[type="text"] {
+            width: 100%;
+            font-family: inherit;
+            font-size: 1.5rem;
+            font-weight: 900;
+            text-align: center;
+            border: 3px solid #000;
+            border-radius: 1rem;
+            padding: 0.8rem;
+            margin: 1rem 0 0.5rem;
+        }
+        input[type="text"]:focus-visible { outline: 4px solid #facc15; outline-offset: 2px; }
+        .hint { font-size: 0.9rem; color: #64748b; }
+
+        .btn {
+            width: 100%;
+            font-family: inherit;
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #fff;
+            background: #22c55e;
+            border: 3px solid #000;
+            border-radius: 999px;
+            box-shadow: 0 6px 0 #000;
+            padding: 0.9rem 1rem;
+            cursor: pointer;
+        }
+        .btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #000; }
+        .btn:disabled { opacity: 0.5; cursor: default; }
+        .btn:focus-visible { outline: 4px solid #facc15; outline-offset: 3px; }
+        .btn.secondary { background: #fff; color: #000; font-size: 1.1rem; }
+
+        .team-list { list-style: none; margin: 0.75rem 0 0; padding: 0; display: grid; gap: 0.4rem; }
+        .team-list li { font-size: 1.25rem; font-weight: 900; background: #ecfccb; border: 2px solid #000; border-radius: 999px; padding: 0.35rem 0.8rem; }
+        .team-list li.me { background: #fde047; }
+
+        .aspect { background: #a3e635; }
+        .role-desc { text-align: left; margin-top: 0.6rem !important; }
+        .prep-list { text-align: left; margin: 0.5rem 0 0; padding-left: 1.3rem; font-size: 1.05rem; line-height: 1.45; }
+        .prep-list li + li { margin-top: 0.4rem; }
+        .partner-list { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.6rem; }
+        .partner-list li { background: #fde047; border: 3px solid #000; border-radius: 1.25rem; padding: 0.6rem 0.8rem; }
+        .partner-list b { display: block; font-size: 1.8rem; font-weight: 900; line-height: 1.15; }
+        .partner-list small { font-size: 0.95rem; font-weight: 700; color: #334155; }
+        .wait-dots::after { content: "…"; animation: dots 1.4s steps(3) infinite; display: inline-block; width: 1.2em; text-align: left; overflow: hidden; vertical-align: bottom; }
+        @keyframes dots { 0% { width: 0.3em; } 100% { width: 1.2em; } }
+
+        /* ---------- Voice report ---------- */
+        .mic-btn {
+            width: 9rem;
+            height: 9rem;
+            margin: 0.75rem auto 0.5rem;
+            border-radius: 50%;
+            border: 4px solid #000;
+            background: #ef4444;
+            box-shadow: 0 7px 0 #000;
+            font-size: 3.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mic-btn:active { transform: translateY(4px); box-shadow: 0 3px 0 #000; }
+        .mic-btn:focus-visible { outline: 4px solid #facc15; outline-offset: 4px; }
+        .mic-btn.listening { background: #000; animation: pulse 1.2s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { box-shadow: 0 7px 0 #000, 0 0 0 0 rgba(239, 68, 68, 0.6); } 50% { box-shadow: 0 7px 0 #000, 0 0 0 18px rgba(239, 68, 68, 0); } }
+        .mic-state { font-weight: 900; font-size: 1.1rem; }
+        /* The transcript is read-only on purpose: students speak, they don't type */
+        .transcript {
+            min-height: 6rem;
+            text-align: left;
+            font-size: 1.1rem;
+            line-height: 1.45;
+            background: #f8fafc;
+            border: 2px dashed #94a3b8;
+            border-radius: 1rem;
+            padding: 0.75rem 0.9rem;
+            margin-top: 0.75rem;
+            user-select: none;
+        }
+        .transcript .interim { color: #94a3b8; }
+        .transcript:empty::before { content: "Your words will appear here."; color: #94a3b8; font-style: italic; }
+        .row { display: flex; gap: 0.75rem; }
+        .row .btn { font-size: 1.1rem; }
+        .warn { font-weight: 700; color: #b45309; background: #fef3c7; border: 2px solid #000; border-radius: 1rem; padding: 0.6rem 0.8rem; text-align: left; font-size: 0.95rem; }
+
+        .confirm { background: #fef3c7; text-align: left; }
+
+        /* ---------- Time's up alert (sent when the teacher's timer ends) ---------- */
+        .timeup {
+            position: fixed; inset: 0; z-index: 30;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+        }
+        .timeup[hidden] { display: none; }
+        .timeup .card { background: #ef4444; color: #fff; max-width: 24rem; width: 100%; animation: pop 0.35s ease-out; }
+        .timeup .card h1 { color: #fff; font-size: 2.4rem; }
+        .timeup .card p { font-weight: 700; margin-bottom: 1rem; }
+        @keyframes pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* ---------- Call teacher (on every screen) ---------- */
+        .call {
+            margin-top: auto;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 900;
+            background: #fde047;
+            color: #000;
+            border: 3px solid #000;
+            border-radius: 999px;
+            box-shadow: 0 4px 0 #000;
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            align-self: center;
+        }
+        .call.on { background: #000; color: #fde047; }
+
+        /* ---------- Prototype controls ---------- */
+        .demo {
+            margin-top: 1rem;
+            border: 2px dashed rgba(255, 255, 255, 0.7);
+            border-radius: 1rem;
+            padding: 0.6rem;
+            color: #fff;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+        .demo button {
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #fff;
+            background: transparent;
+            border: 2px dashed #fff;
+            border-radius: 0.6rem;
+            padding: 0.4rem 0.7rem;
+            margin-top: 0.35rem;
+            cursor: pointer;
+        }
+
+        .toast {
+            position: fixed; left: 50%; top: 1rem; transform: translateX(-50%);
+            max-width: calc(100vw - 2rem);
+            background: #000; color: #fff; font-weight: 700;
+            padding: 0.7rem 1.1rem; border-radius: 1rem; z-index: 20; display: none; text-align: center;
+        }
+        .toast.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="phone">
+        <header>
+            <span class="brand">Speaking-Practice Center</span>
+            <span class="who" id="who"></span>
+        </header>
+
+        <!-- 1. JOIN -->
+        <section class="screen" id="s-join">
+            <div class="card">
+                <h1>Welcome!</h1>
+                <p>Enter your name.</p>
+                <input type="text" id="name" maxlength="20" autocomplete="off" placeholder="Your name" aria-label="Your name">
+            </div>
+            <button class="btn" id="join" disabled>Join →</button>
+        </section>
+
+        <!-- 2. WAITING -->
+        <section class="screen" id="s-wait" hidden>
+            <div class="card">
+                <h1>You're in!</h1>
+                <p class="wait-dots" id="wait-text">Wait for your teacher</p>
+            </div>
+        </section>
+
+        <!-- 3. TEAM -->
+        <section class="screen" id="s-team" hidden>
+            <div class="card">
+                <h2>Your team</h2>
+                <p class="big" id="team-name"></p>
+                <ul class="team-list" id="team-list"></ul>
+            </div>
+            <div class="card">
+                <p>Go find your team.</p>
+            </div>
+            <div class="card aspect" id="topic-card" hidden>
+                <h2 id="topic-label">Topic</h2>
+                <p class="big" id="topic-text"></p>
+            </div>
+        </section>
+
+        <!-- 4. ASPECT (one per round) -->
+        <section class="screen" id="s-aspect" hidden>
+            <div class="card">
+                <span class="tag" id="round-tag"></span>
+                <h2 id="plan-type"></h2>
+                <p>Plan with your team:</p>
+                <p class="big" id="aspect"></p>
+            </div>
+            <div class="card aspect">
+                <p><b>Discuss and plan this aspect together.</b> Speak in English!</p>
+            </div>
+        </section>
+
+        <!-- 4b. ROLE CARD (Role-play: preparation) -->
+        <section class="screen" id="s-role" hidden>
+            <div class="card">
+                <span class="tag" id="role-tag"></span>
+                <h2 id="role-scenario"></h2>
+                <p class="big" id="role-name"></p>
+                <p class="role-desc" id="role-desc"></p>
+            </div>
+            <div class="card aspect" id="prep-card" hidden>
+                <h2>Prepare your role</h2>
+                <ul class="prep-list" id="prep-list"></ul>
+            </div>
+        </section>
+
+        <!-- 4c. PARTNER (Role-play: one per round) -->
+        <section class="screen" id="s-partner" hidden>
+            <div class="card">
+                <span class="tag" id="partner-tag"></span>
+                <h2>Talk to</h2>
+                <ul class="partner-list" id="partner-list"></ul>
+            </div>
+            <div class="card">
+                <p>You are <b id="partner-me"></b></p>
+            </div>
+        </section>
+
+        <!-- 5. VOICE REPORT -->
+        <section class="screen" id="s-report" hidden>
+            <div class="card">
+                <h1>Report your plan</h1>
+                <p>Press the microphone and tell your teacher about your team's plan.</p>
+                <button class="mic-btn" id="mic" aria-label="Start recording">🎤</button>
+                <div class="mic-state" id="mic-state">Tap to speak</div>
+                <div class="transcript" id="transcript" aria-live="polite"></div>
+            </div>
+            <div class="warn" id="no-speech" hidden></div>
+            <div class="row" id="send-row">
+                <button class="btn secondary" id="redo" disabled>↺ Record again</button>
+                <button class="btn" id="send" disabled>Send ✓</button>
+            </div>
+            <!-- Only one report per team: confirm before sending (no browser pop-up) -->
+            <div class="card confirm" id="confirm" hidden>
+                <p><b>Send this report for your whole team?</b><br>Only one report per team. After this, nobody in your team can record again.</p>
+                <div class="row" style="margin-top: 0.9rem;">
+                    <button class="btn secondary" id="confirm-no">Not yet</button>
+                    <button class="btn" id="confirm-yes">Yes, send</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. SENT -->
+        <section class="screen" id="s-sent" hidden>
+            <div class="card">
+                <h1>Report sent!</h1>
+                <p id="sent-by">Your team's report is on its way. Look at the screen.</p>
+            </div>
+        </section>
+
+        <!-- 7. END -->
+        <section class="screen" id="s-end" hidden>
+            <div class="card">
+                <h1>Well done!</h1>
+                <p>The activity is over. Thank you!</p>
+            </div>
+        </section>
+
+        <!-- 0. NO SESSION (wrong or old code) -->
+        <section class="screen" id="s-nosession" hidden>
+            <div class="card">
+                <h1>Session not found</h1>
+                <p>Scan the QR code on your teacher's screen again.</p>
+            </div>
+        </section>
+
+        <!-- Global help button, on every screen after joining -->
+        <button class="call" id="call" hidden>✋ Call teacher</button>
+
+        <!-- Prototype only: stands in for the teacher's screen until both are connected -->
+        <div class="demo" id="demo">
+            Prototype: simulate the teacher's screen<br>
+            <button id="demo-next">Teacher: next step →</button>
+            <button id="demo-report">Teacher: request plan reports</button>
+            <button id="demo-mate">A teammate sends the report</button>
+            <button id="demo-timeup">Teacher: time is up</button>
+        </div>
+    </div>
+    <div class="toast" id="toast" role="status"></div>
+    <div class="timeup" id="timeup" role="alertdialog" aria-labelledby="timeup-title" hidden>
+        <div class="card">
+            <h1 id="timeup-title">⏰ Time's up!</h1>
+            <p>Stop and listen to your teacher.</p>
+            <button class="btn secondary" id="timeup-ok">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // ---------- Real-time link between the teacher's screen and the phones ----------
+        // Paste the Firebase web config here (Firebase console › Project settings › Your apps).
+        // While it is null, the page works on its own: the "prototype" buttons simulate the phones.
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyABjG_5bZ-ZT7E7aZvbYDfZWr5X6HZYTng",
+            authDomain: "spc-prototype3.firebaseapp.com",
+            databaseURL: "https://spc-prototype3-default-rtdb.firebaseio.com",
+            projectId: "spc-prototype3",
+            storageBucket: "spc-prototype3.firebasestorage.app",
+            messagingSenderId: "18791534503",
+            appId: "1:18791534503:web:9a5adbe35bc7462a8ef082"
+        };
+
+        // Small store with the same calls for Firebase and for the local (no internet) mode.
+        // Paths are like "sessions/4821/students".
+        function makeStore() {
+            if (FIREBASE_CONFIG && window.firebase) {
+                if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+                const db = firebase.database();
+                return {
+                    live: true,
+                    watch: (path, cb) => db.ref(path).on('value', s => cb(s.val())),
+                    set: (path, val) => db.ref(path).set(val),
+                    push: (path, val) => db.ref(path).push(val).key,
+                    // Writes val only if nothing is there yet (one report per team). Resolves true if it was written.
+                    claim: (path, val) => db.ref(path).transaction(cur => cur === null ? val : undefined).then(r => r.committed)
+                };
+            }
+            // Local mode: an in-memory copy, shared with other tabs of this browser when the page is served from a web address
+            const KEY = 'spc-local-db';
+            let tree = {};
+            try { tree = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { tree = {}; }
+            const listeners = [];
+            const parts = path => path.split('/').filter(Boolean);
+            const get = path => parts(path).reduce((o, k) => (o && typeof o === 'object' && k in o) ? o[k] : null, tree);
+            function notify() {
+                listeners.forEach(l => {
+                    const json = JSON.stringify(get(l.path));
+                    if (json !== l.last) { l.last = json; l.cb(json === undefined ? null : JSON.parse(json)); }
+                });
+            }
+            function write(path, val) {
+                const ks = parts(path);
+                let o = tree;
+                ks.slice(0, -1).forEach(k => { if (!o[k] || typeof o[k] !== 'object') o[k] = {}; o = o[k]; });
+                if (val === null || val === undefined) delete o[ks[ks.length - 1]];
+                else o[ks[ks.length - 1]] = JSON.parse(JSON.stringify(val));
+                try { localStorage.setItem(KEY, JSON.stringify(tree)); } catch (e) { /* storage blocked: this tab only */ }
+                setTimeout(notify, 0);
+            }
+            window.addEventListener('storage', e => {
+                if (e.key !== KEY) return;
+                try { tree = JSON.parse(e.newValue) || {}; } catch (err) { return; }
+                notify();
+            });
+            return {
+                live: false,
+                watch: (path, cb) => { const l = { path, cb, last: '\u0000' }; listeners.push(l); setTimeout(notify, 0); },
+                set: (path, val) => { write(path, val); return Promise.resolve(); },
+                push: (path, val) => { const key = Date.now().toString(36) + Math.random().toString(36).slice(2, 6); write(path + '/' + key, val); return key; },
+                claim: (path, val) => { if (get(path) !== null) return Promise.resolve(false); write(path, val); return Promise.resolve(true); }
+            };
+        }
+
+        // Loads the Firebase scripts only when a config has been pasted above
+        function loadFirebase() {
+            if (!FIREBASE_CONFIG) return Promise.resolve();
+            const add = src => new Promise(res => {
+                const s = document.createElement('script');
+                s.src = src; s.onload = res; s.onerror = res;
+                document.head.appendChild(s);
+            });
+            const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+            return add(base + 'firebase-app-compat.js').then(() => add(base + 'firebase-database-compat.js'));
+        }
+
+        // ---------- Sample data (comes from the teacher's screen once connected) ----------
+        const SESSION = {
+            plan: "A date",
+            team: 2,
+            teammates: ["Isidora"],
+            // A1–A2 wording for "A date", from MATRIX_Planning_Discussions.xlsx
+            aspects: ["Time and place", "Clothes", "Food and drinks", "Transportation"]
+        };
+
+        const $ = id => document.getElementById(id);
+        let round = 0;
+        let myName = '';
+
+        function toast(msg) {
+            const t = $('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(toast.timer);
+            toast.timer = setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        function show(id) {
+            document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id);
+            $('call').hidden = id === 's-join';
+            window.scrollTo(0, 0);
+        }
+
+        // ---------- 1. Join ----------
+        $('name').addEventListener('input', () => { $('join').disabled = !$('name').value.trim(); });
+        $('name').addEventListener('keydown', e => { if (e.key === 'Enter' && $('name').value.trim()) $('join').click(); });
+        $('join').onclick = () => {
+            myName = $('name').value.trim();
+            $('who').textContent = myName;
+            if (live.code) {
+                live.me = store.push(live.path('students'), { name: myName, t: Date.now() });
+                try { localStorage.setItem('spc-me-' + live.code, JSON.stringify({ id: live.me, name: myName })); } catch (e) { /* not saved: fine */ }
+                render();
+                return;
+            }
+            show('s-wait');
+        };
+
+        // ---------- 3–4. Team and aspects ----------
+        function showTeam() {
+            $('team-name').textContent = 'Team ' + SESSION.team;
+            const ul = $('team-list');
+            ul.innerHTML = '';
+            [myName, ...SESSION.teammates].forEach((n, i) => {
+                const li = document.createElement('li');
+                li.textContent = i === 0 ? n + ' (you)' : n;
+                if (i === 0) li.className = 'me';
+                ul.appendChild(li);
+            });
+            show('s-team');
+        }
+
+        function showAspect() {
+            $('round-tag').textContent = 'Round ' + round + ' of ' + SESSION.aspects.length;
+            $('plan-type').textContent = 'Plan: ' + SESSION.plan;
+            $('aspect').textContent = SESSION.aspects[round - 1];
+            show('s-aspect');
+            if (navigator.vibrate) navigator.vibrate(200);
+        }
+
+        // ---------- 5. Voice report (speech to text, no typing) ----------
+        const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let rec = null;
+        let listening = false;
+        let finalText = '';
+
+        function renderTranscript(interim) {
+            const box = $('transcript');
+            box.textContent = finalText;
+            if (interim) {
+                const span = document.createElement('span');
+                span.className = 'interim';
+                span.textContent = (finalText ? ' ' : '') + interim;
+                box.appendChild(span);
+            }
+            $('send').disabled = listening || !finalText.trim();
+            $('redo').disabled = listening || !finalText.trim();
+        }
+
+        function setListening(on) {
+            listening = on;
+            $('mic').classList.toggle('listening', on);
+            $('mic').textContent = on ? '⏹' : '🎤';
+            $('mic').setAttribute('aria-label', on ? 'Stop recording' : 'Start recording');
+            $('mic-state').textContent = on ? 'Listening… tap to stop' : (finalText ? 'Tap to add more' : 'Tap to speak');
+            renderTranscript('');
+        }
+
+        function startListening() {
+            if (!Recognition) {
+                voiceProblem('Voice input does not work in this browser. Please open this page in Chrome.');
+                return;
+            }
+            rec = new Recognition();
+            rec.lang = 'en-US';
+            rec.continuous = true;
+            rec.interimResults = true;
+            rec.onresult = (e) => {
+                let interim = '';
+                for (let i = e.resultIndex; i < e.results.length; i++) {
+                    const text = e.results[i][0].transcript.trim();
+                    // Kept exactly as recognised: no corrections
+                    if (e.results[i].isFinal) finalText = (finalText ? finalText + ' ' : '') + text;
+                    else interim += text + ' ';
+                }
+                renderTranscript(interim.trim());
+            };
+            rec.onerror = (e) => {
+                if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+                    voiceProblem('The microphone is blocked. Allow the microphone for this page and try again. (Voice needs the page to be published on https.)');
+                } else if (e.error !== 'no-speech' && e.error !== 'aborted') {
+                    voiceProblem('Voice input is not available right now (' + e.error + '). Check your internet connection and try again.');
+                }
+                setListening(false);
+            };
+            rec.onend = () => setListening(false);
+            try { rec.start(); setListening(true); } catch (err) { setListening(false); }
+        }
+
+        // Shows the problem and, in the prototype only, offers a sample report to try the rest of the flow
+        function voiceProblem(msg) {
+            const w = $('no-speech');
+            w.hidden = false;
+            w.textContent = msg + ' ';
+            const b = document.createElement('button');
+            b.className = 'btn secondary';
+            b.style.cssText = 'margin-top:0.5rem;font-size:0.9rem;border-style:dashed;box-shadow:none';
+            b.textContent = 'Prototype: use a sample report';
+            b.onclick = () => {
+                finalText = 'we go to the cinema in saturday at seven we take the bus and we have twenty dollar each one';
+                renderTranscript('');
+                w.hidden = true;
+            };
+            w.appendChild(b);
+        }
+
+        $('mic').onclick = () => {
+            if (listening && rec) rec.stop();
+            else startListening();
+        };
+        $('redo').onclick = () => { finalText = ''; renderTranscript(''); $('mic-state').textContent = 'Tap to speak'; };
+        $('send').onclick = () => {
+            $('send-row').hidden = true;
+            $('confirm').hidden = false;
+            // The question can be below the fold on small phones: bring it into view
+            $('confirm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            $('confirm-yes').focus({ preventScroll: true });
+        };
+        $('confirm-no').onclick = () => {
+            $('confirm').hidden = true;
+            $('send-row').hidden = false;
+        };
+        $('confirm-yes').onclick = () => {
+            // The transcript goes to the teacher's screen exactly as recognised,
+            // and the report option closes for the whole team (only the first report counts)
+            if (live.code) {
+                $('confirm-yes').disabled = true;
+                live.sentByMe = true;
+                store.claim(live.path('reports/t' + live.team), { text: finalText, by: myName, t: Date.now() })
+                    .then(ok => { $('confirm-yes').disabled = false; if (!ok) live.sentByMe = false; render(); });
+                return;
+            }
+            $('sent-by').textContent = "Your team's report is on its way. Look at the screen.";
+            show('s-sent');
+        };
+        // A teammate sent the team's report first: the microphone closes for everyone else
+        function teammateSent(name) {
+            if (listening && rec) rec.abort();
+            $('sent-by').textContent = name + " already sent your team's report. Look at the screen.";
+            show('s-sent');
+        }
+
+        // ---------- Real time: follow the teacher's screen ----------
+        const live = {
+            code: new URLSearchParams(location.search).get('s'),
+            me: null, team: -1, session: undefined, roundShown: 0, sentByMe: false, timeupSeen: undefined,
+            path(p) { return 'sessions/' + this.code + (p ? '/' + p : ''); }
+        };
+        let store = null;
+        let current = 's-join';
+        function go(id) { if (current !== id) { current = id; show(id); } }
+
+        function render() {
+            const s = live.session;
+            if (s === undefined) return;
+            if (!s || !s.info) { go('s-nosession'); return; }
+            // Time's up: alert once per timer end (an old alert is not shown when the page opens)
+            const tu = s.timeup ? s.timeup.at : null;
+            if (live.timeupSeen === undefined) live.timeupSeen = tu;
+            else if (tu && tu !== live.timeupSeen) {
+                live.timeupSeen = tu;
+                if (live.me && s.phase !== 'reports' && s.phase !== 'end') {
+                    $('timeup').hidden = false;
+                    $('timeup-ok').focus();
+                    if (navigator.vibrate) navigator.vibrate([400, 150, 400]);
+                }
+            }
+            if (s.phase === 'reports' || s.phase === 'end') $('timeup').hidden = true;
+            const students = s.students || {};
+            if (!live.me) { go('s-join'); return; }
+            if (!students[live.me]) { go('s-wait'); return; }   // just joined: the sign-up is on its way
+            myName = students[live.me].name;
+            // The call stays on until the student cancels it or the teacher marks it as done
+            setCall(!!(s.calls && s.calls[live.me]));
+            $('who').textContent = myName;
+            let teams = [];
+            try { teams = JSON.parse(s.teams || '[]'); } catch (e) { teams = []; }
+            live.team = teams.findIndex(t => t.some(m => m.id === live.me));
+            const inTeam = live.team >= 0;
+            const phase = s.phase || 'join';
+            const planning = s.info.activity === 'Planning';
+            SESSION.plan = s.info.choice;
+
+            if (phase === 'end') { go('s-end'); return; }
+            if (phase === 'reports' && inTeam) {
+                const r = s.reports && s.reports['t' + live.team];
+                if (r) {
+                    if (listening && rec) rec.abort();
+                    $('sent-by').textContent = r.by === myName && live.sentByMe
+                        ? "Your team's report is on its way. Look at the screen."
+                        : r.by + " already sent your team's report. Look at the screen.";
+                    go('s-sent');
+                } else if (current !== 's-report') {
+                    finalText = ''; renderTranscript('');
+                    $('confirm').hidden = true; $('send-row').hidden = false; $('no-speech').hidden = true;
+                    go('s-report');
+                    toast('Your teacher asked for your plan report');
+                }
+                return;
+            }
+            const round = s.round;
+            if (!planning && phase === 'rounds' && s.rp && round) { if (renderRolePlay(s, round)) return; }
+            if (phase === 'rounds' && planning && inTeam && round && round.aspects) {
+                if (current !== 's-aspect' || live.roundShown !== round.n) {
+                    live.roundShown = round.n;
+                    $('round-tag').textContent = 'Round ' + round.n + ' of ' + round.total;
+                    $('plan-type').textContent = 'Plan: ' + round.plan;
+                    $('aspect').textContent = round.aspects[live.team];
+                    $('timeup').hidden = true;   // a new round starts: the old alert goes away
+                    current = 's-aspect'; show('s-aspect');
+                    if (navigator.vibrate) navigator.vibrate(200);
+                }
+                return;
+            }
+            if (inTeam && phase !== 'join') {
+                SESSION.team = live.team + 1;
+                SESSION.teammates = teams[live.team].filter(m => m.id !== live.me).map(m => m.name);
+                const topic = s.topic;
+                $('topic-card').hidden = !topic;
+                if (topic) {
+                    $('topic-label').textContent = topic.visible ? 'Your teacher chose' : 'Topic ' + topic.n;
+                    $('topic-text').textContent = topic.text;
+                }
+                const key = JSON.stringify(teams[live.team]);
+                if (current !== 's-team' || live.teamKey !== key) { live.teamKey = key; showTeam(); current = 's-team'; }
+                return;
+            }
+            $('wait-text').textContent = phase === 'join' || phase === 'teams' ? 'Wait for your teacher' : 'Look at the screen';
+            go('s-wait');
+        }
+
+        // Role-play: role card in preparation (questions after START), partner in each round (after START)
+        function renderRolePlay(s, round) {
+            let rp;
+            try { rp = JSON.parse(s.rp); } catch (e) { return false; }
+            const group = rp.groups.find(g => g.some(m => m.id === live.me));
+            if (!group) return false;
+            const me = group.find(m => m.id === live.me);
+            const role = n => rp.roles[n - 1] || ['Participant ' + n, ''];
+            const myRole = role(me.p);
+            const showRole = () => {
+                $('role-tag').textContent = 'Participant ' + me.p;
+                $('role-scenario').textContent = rp.scenario;
+                $('role-name').textContent = myRole[0];
+                $('role-desc').textContent = myRole[1];
+                const ul = $('prep-list');
+                ul.innerHTML = '';
+                (rp.prep[me.p - 1] || []).forEach(q => { const li = document.createElement('li'); li.textContent = q; ul.appendChild(li); });
+            };
+            const key = round.n + '|' + round.started;
+            if (round.n === 0 || !round.started) {
+                // Preparation, or a round that has not started yet: the role card
+                showRole();
+                $('prep-card').hidden = !(round.n === 0 && round.started);
+                if (current !== 's-role' || live.rpKey !== key) {
+                    live.rpKey = key; current = 's-role'; show('s-role');
+                    if (round.started && navigator.vibrate) navigator.vibrate(200);
+                }
+                return true;
+            }
+            // Round started: who to talk to (pairs of this group's size; a trio gives two partners)
+            const table = rp.pairs[group.length] || [];
+            const line = table[round.n - 1] || '';
+            const sets = line.split('/').map(g => g.replace(/[()\sP]/g, '').split('-').map(Number));
+            const mine = sets.find(set => set.includes(me.p)) || [];
+            const ul = $('partner-list');
+            ul.innerHTML = '';
+            mine.filter(n => n !== me.p).forEach(n => {
+                const mate = group.find(m => m.p === n);
+                const li = document.createElement('li');
+                const b = document.createElement('b');
+                b.textContent = mate ? mate.name : 'Participant ' + n;
+                const small = document.createElement('small');
+                small.textContent = 'Participant ' + n + ' · ' + role(n)[0];
+                li.append(b, small);
+                ul.appendChild(li);
+            });
+            if (!ul.children.length) ul.innerHTML = '<li><b>Look at the screen</b></li>';
+            $('partner-tag').textContent = 'Round ' + round.n + ' of ' + round.total;
+            $('partner-me').textContent = myRole[0];
+            if (current !== 's-partner' || live.rpKey !== key) {
+                live.rpKey = key; current = 's-partner'; show('s-partner');
+                $('timeup').hidden = true;
+                if (navigator.vibrate) navigator.vibrate(200);
+            }
+            return true;
+        }
+
+        if (live.code) {
+            $('demo').hidden = true;
+            try { live.me = (JSON.parse(localStorage.getItem('spc-me-' + live.code)) || {}).id || null; } catch (e) { live.me = null; }
+            loadFirebase().then(() => {
+                store = makeStore();
+                store.watch(live.path(), s => { live.session = s; render(); });
+            });
+        }
+
+        $('timeup-ok').onclick = () => { $('timeup').hidden = true; };
+        $('demo-timeup').onclick = () => {
+            if (!myName) { toast('Write your name and join first'); return; }
+            $('timeup').hidden = false;
+            if (navigator.vibrate) navigator.vibrate([400, 150, 400]);
+        };
+
+        // ---------- Call teacher (global) ----------
+        function setCall(on) {
+            $('call').classList.toggle('on', on);
+            $('call').textContent = on ? '✋ Calling… Tap to cancel' : '✋ Call teacher';
+        }
+        $('call').onclick = () => {
+            const on = !$('call').classList.contains('on');
+            setCall(on);
+            if (live.code && live.me && store) {
+                // The teacher's screen shows the call with the team number only (no name)
+                store.set(live.path('calls/' + live.me), on ? { t: Date.now(), team: live.team } : null);
+                return;
+            }
+            if (on) toast('Your teacher got your call');
+        };
+
+        // ---------- Prototype: what the teacher's screen will trigger ----------
+        $('demo-next').onclick = () => {
+            const current = [...document.querySelectorAll('.screen')].find(s => !s.hidden).id;
+            if (current === 's-join') { toast('Write your name and join first'); return; }
+            if (current === 's-wait') { showTeam(); return; }
+            if (current === 's-team' || (current === 's-aspect' && round < SESSION.aspects.length)) { round++; showAspect(); return; }
+            if (current === 's-aspect') { show('s-report'); toast('Your teacher asked for your plan report'); return; }
+            toast('End of the prototype flow');
+        };
+        $('demo-mate').onclick = () => {
+            if ($('s-report').hidden) { toast('First: Teacher: request plan reports'); return; }
+            teammateSent(SESSION.teammates[0]);
+        };
+        $('demo-report').onclick = () => {
+            $('confirm').hidden = true;
+            $('send-row').hidden = false;
+            if (!myName) { toast('Write your name and join first'); return; }
+            show('s-report');
+            toast('Your teacher asked for your plan report');
+        };
+    </script>
+</body>
+</html>

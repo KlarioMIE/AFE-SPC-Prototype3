@@ -5,11 +5,14 @@ Prototype 3 of the Speaking-Practice Center (SPC): a teacher screen plus student
 Built in layers, starting from Prototype 2's teacher screen.
 
 ## Status
-- [x] Welcome screen: activity buttons with info bubbles (description, suggested CEFR level, tutorial fake door)
-- [ ] Scenarios screen
-- [ ] Class setup + QR
-- [ ] Rounds and timers
-- [ ] Real-time connection with students' phones
+- [x] Welcome screen: activity clusters that unfold their activities, each with an info bubble (description, suggested CEFR level, tutorial fake door)
+- [x] Scenarios screen (reached from Problem Solving › Role-play)
+- [x] Class size + groups summary (Planning uses pairs, MATRIX_Class_Size-Groups_PLANNING), then the QR on its own screen with a sign-up counter and notices (simulated until phones connect)
+- [x] Preparation screen with timer ("Prepare your role, use the questions on your mobile")
+- [x] Rounds and timers: one round per screen, info bubbles on each part of the timer panel, pairs shown as "Participant N"
+- [x] Student web page (`student.html`, no app): join with name, team, aspect per round, voice-only plan report, Call teacher. Teacher actions simulated with dashed prototype buttons
+- [ ] Real-time connection between teacher screen and students' phones
+- [ ] Publish on https (needed for the microphone)
 
 ## How to view
 Open `index.html` in a browser.

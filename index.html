@@ -12,7 +12,9 @@
         body {
             margin: 0;
             font-family: 'Lexend', sans-serif;
-            background-color: #ffffff;
+            /* Tinted with the open cluster's color, to show we are one layer deeper */
+            background-color: color-mix(in srgb, var(--layer-color, #fff) 16%, #fff);
+            transition: background-color 0.3s ease-in-out;
             color: #1e293b;
             overflow-x: hidden;
         }
@@ -46,11 +48,11 @@
             text-align: center;
         }
 
-        /* Activity grid: 5 columns on laptops, 3 on tablets, 2 on phones */
+        /* Cluster grid: 4 columns on laptops, 3 on tablets, 2 on phones */
         .grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 1rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem 1rem;
             width: 100%;
             max-width: 72rem;
         }
@@ -58,6 +60,66 @@
         @media (max-width: 560px)  { .grid { grid-template-columns: repeat(2, 1fr); } }
 
         .card { position: relative; }
+
+        /* Cluster button: shows a small arrow and stays "pressed" while open */
+        .btn-cluster .arrow {
+            display: inline-block;
+            margin-left: 0.4rem;
+            font-size: 0.8em;
+            transition: transform 0.15s ease-in-out;
+        }
+        .btn-cluster[aria-expanded="true"] {
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #000;
+        }
+        .btn-cluster[aria-expanded="true"] .arrow { transform: rotate(180deg); }
+
+        /* Inside a cluster: the other clusters fade back (still clickable) */
+        .btn-cluster { transition: all 0.1s ease-in-out, opacity 0.3s, filter 0.3s; }
+        body.in-cluster .btn-cluster:not([aria-expanded="true"]) {
+            opacity: 0.4;
+            filter: grayscale(0.8);
+        }
+        body.in-cluster .btn-cluster:not([aria-expanded="true"]):hover,
+        body.in-cluster .btn-cluster:not([aria-expanded="true"]):focus-visible {
+            opacity: 0.85;
+            filter: none;
+        }
+        .subtitle .crumb { font-style: normal; color: #000; }
+
+        /* Panel with the activities of the open cluster; spans the full row below it */
+        .panel {
+            grid-column: 1 / -1;
+            position: relative;
+            border: 3px solid #000;
+            border-radius: 1.5rem;
+            box-shadow: 6px 6px 0 #000;
+            padding: 1.25rem 1.25rem 1.5rem;
+            background: color-mix(in srgb, var(--panel-color, #fff) 40%, #fff);
+        }
+        .panel[hidden] { display: none; }
+        /* Tail pointing up at the open cluster; its left offset is set from JS */
+        .panel::before, .panel::after {
+            content: "";
+            position: absolute;
+            left: var(--tail-x, 50%);
+            transform: translateX(-50%);
+            border: 12px solid transparent;
+        }
+        .panel::before { top: -27px; border-bottom-color: #000; }
+        .panel::after  { top: -21px; border-bottom-color: color-mix(in srgb, var(--panel-color, #fff) 40%, #fff); }
+        .panel h2 {
+            margin: 0 0 1rem;
+            font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+            font-weight: 900;
+        }
+        .panel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+            gap: 1.25rem 1rem;
+        }
+        @media (max-width: 560px) { .panel-grid { grid-template-columns: 1fr 1fr; } }
+        .btn-activity { font-size: clamp(1rem, 1.8vw, 1.3rem); padding: 1.1rem 0.8rem; }
 
         .btn-main {
             width: 100%;
@@ -123,6 +185,8 @@
 
         .bubble h2 { margin: 0 0 0.4rem; font-size: 1.35rem; font-weight: 900; }
         .bubble p  { margin: 0 0 0.75rem; font-size: 1.05rem; line-height: 1.4; }
+        .bubble .cluster-tag { margin: 0 0 0.15rem; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; }
+        .bubble ul { margin: -0.25rem 0 0.75rem; padding-left: 1.2rem; font-size: 0.95rem; line-height: 1.35; }
         .bubble .level {
             display: inline-block;
             font-weight: 900;
@@ -150,6 +214,30 @@
         }
         .tutorial-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #000; }
 
+        /* Fake doors (not built yet): dimmed so the teacher sees they are not ready */
+        .fake-door { opacity: 0.45; filter: saturate(0.35); }
+        .fake-door:hover, .fake-door:focus-visible { opacity: 0.6; }
+
+        /* ---------- Student calls (on every screen, oldest first) ---------- */
+        .calls {
+            position: fixed; top: 5.5rem; right: 1rem; z-index: 25;
+            display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;
+        }
+        .calls[hidden] { display: none; }
+        .call-item {
+            display: flex; align-items: center; gap: 0.75rem;
+            background: #fde047; color: #000;
+            border: 3px solid #000; border-radius: 1rem; box-shadow: 4px 4px 0 #000;
+            padding: 0.6rem 0.7rem 0.6rem 1rem;
+            font-weight: 900; font-size: 1.15rem;
+            animation: ring 1s ease-in-out 3;
+        }
+        .call-item button {
+            font-family: inherit; font-weight: 900; font-size: 0.9rem;
+            background: #fff; border: 2px solid #000; border-radius: 0.6rem; padding: 0.3rem 0.6rem; cursor: pointer;
+        }
+        @keyframes ring { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+
         /* Short message for fake doors */
         .toast {
             position: fixed;
@@ -168,84 +256,970 @@
             text-align: center;
         }
         .toast.show { display: block; }
+        /* Sign-up notices appear at the top so they never cover the buttons */
+        .toast.top { top: 1.5rem; bottom: auto; background: #15803d; border: 3px solid #000; }
+
+        .bubble > :last-child { margin-bottom: 0; }
+
+        /* ---------- Screens ---------- */
+        .screen { width: 100%; flex-grow: 1; display: flex; flex-direction: column; }
+        .screen[hidden] { display: none; }
+        #screen-welcome { align-items: center; justify-content: center; }
+        .app.inner { justify-content: flex-start; }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .back-btn, .btn-small {
+            font-family: inherit;
+            font-weight: 900;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: #fff;
+            color: #000;
+            border: 3px solid #000;
+            border-radius: 0.75rem;
+            box-shadow: 0 5px 0 #000;
+            padding: 0.6rem 1.2rem;
+            cursor: pointer;
+        }
+        .back-btn:active, .btn-small:active { transform: translateY(3px); box-shadow: 0 2px 0 #000; }
+        .back-btn:focus-visible, .btn-small:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
+        .step-tag {
+            font-weight: 900;
+            font-style: italic;
+            text-transform: uppercase;
+            color: #312e81;
+            font-size: clamp(1rem, 2vw, 1.4rem);
+        }
+        .screen-title {
+            font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+            font-weight: 900;
+            color: #4338ca;
+            margin: 0 0 1rem;
+        }
+        .btn-go {
+            font-family: inherit;
+            font-weight: 900;
+            font-size: clamp(1.4rem, 3vw, 2.2rem);
+            background: #22c55e;
+            color: #fff;
+            border: 3px solid #000;
+            border-radius: 999px;
+            box-shadow: 0 7px 0 #000;
+            padding: 1rem 2.5rem;
+            cursor: pointer;
+        }
+        .btn-go:active { transform: translateY(4px); box-shadow: 0 3px 0 #000; }
+        .btn-go:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
+
+        /* Small "i" placed next to a control (not on a card corner) */
+        .info-inline {
+            position: static;
+            flex-shrink: 0;
+            background: #1e3a8a;
+            color: #fff;
+            border-color: #1e3a8a;
+        }
+        .info-wrap { display: inline-flex; }
+
+        /* ---------- Scenarios ---------- */
+        .scenarios {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+            min-height: 60vh;
+        }
+        @media (max-width: 760px) { .scenarios { grid-template-columns: 1fr; } }
+        .scenario-list { display: grid; gap: 0.75rem; align-content: start; max-height: 65vh; overflow-y: auto; padding: 0.4rem 1rem 0.6rem 0.2rem; }
+        .scenario-row { display: flex; align-items: center; gap: 0.75rem; }
+        .scenario-item {
+            flex-grow: 1;
+            font-family: inherit;
+            font-size: 1.2rem;
+            font-weight: 900;
+            text-align: left;
+            background: #fff;
+            color: #000;
+            border: 3px solid #000;
+            border-radius: 0.75rem;
+            padding: 0.9rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .scenario-item:hover { background: #f8fafc; transform: translateX(6px); }
+        .scenario-item:focus-visible { outline: 4px solid #2563eb; outline-offset: 2px; }
+        .scenario-item[aria-pressed="true"] { background: #3b82f6; color: #fff; }
+        .scenario-choice {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.25rem;
+            text-align: center;
+            background: #f9fafb;
+            border: 4px dashed #d1d5db;
+            border-radius: 2.5rem;
+            padding: 2rem;
+        }
+        .scenario-choice p { margin: 0; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 900; font-style: italic; color: #d1d5db; }
+        .scenario-choice p.chosen { color: #4338ca; }
+        .scenario-choice p:only-child, .scenario-choice p:not(.chosen) { margin: auto 0; }
+        .scenario-image {
+            flex-grow: 1;
+            width: 100%;
+            min-height: 12rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            background: #e5e7eb;
+            color: #9ca3af;
+            font-weight: 900;
+            font-size: 1.2rem;
+        }
+        .scenario-image[hidden] { display: none; }
+        .scenario-image img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* ---------- Class size ---------- */
+        .setup { display: flex; flex-direction: column; gap: 2rem; max-width: 46rem; }
+        .setup h2 { margin: 0; font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 900; }
+        .size-row { display: flex; gap: 1rem; align-items: center; }
+        .size-row input {
+            width: 9rem;
+            font-family: inherit;
+            font-size: 3rem;
+            font-weight: 900;
+            text-align: center;
+            border: 3px solid #000;
+            border-radius: 1.5rem;
+            padding: 0.6rem;
+        }
+        .size-row input:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
+        .btn-enter {
+            font-family: inherit;
+            font-size: 1.5rem;
+            font-weight: 900;
+            background: #2563eb;
+            color: #fff;
+            border: 3px solid #000;
+            border-radius: 1.5rem;
+            box-shadow: 0 6px 0 #000;
+            padding: 1rem 2rem;
+            cursor: pointer;
+        }
+        .btn-enter:active { transform: translateY(3px); box-shadow: 0 3px 0 #000; }
+        .level-pick { display: flex; flex-direction: column; gap: 0.9rem; }
+        .level-options { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .level-btn {
+            font-family: inherit;
+            font-size: 1.6rem;
+            font-weight: 900;
+            min-width: 8rem;
+            background: #fff;
+            color: #000;
+            border: 3px solid #000;
+            border-radius: 1.25rem;
+            box-shadow: 0 6px 0 #000;
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+        }
+        .level-btn:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
+        .level-btn[aria-checked="true"] { background: #000; color: #fde047; transform: translateY(3px); box-shadow: 0 3px 0 #000; }
+        .level-missing { margin: 0; font-weight: 900; font-size: 1.15rem; color: #b45309; }
+        .error { font-weight: 900; font-size: 1.2rem; color: #dc2626; background: #fef2f2; border: 2px solid #dc2626; border-radius: 1rem; padding: 0.75rem; }
+        .summary {
+            background: #facc15;
+            border: 4px solid #000;
+            border-radius: 2rem;
+            box-shadow: 8px 8px 0 #000;
+            padding: 1.5rem 1.75rem;
+        }
+        .summary .label { margin: 0 0 0.5rem; font-weight: 900; text-decoration: underline; text-transform: uppercase; }
+        .summary .total { display: flex; align-items: center; gap: 0.75rem; font-size: 1.6rem; font-weight: 900; margin-bottom: 0.75rem; }
+        .summary .total b { background: #000; color: #fff; padding: 0.1rem 0.7rem; border-radius: 0.5rem; }
+        .summary .groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.25rem 1.5rem; font-weight: 700; font-size: 1.1rem; }
+        .summary .groups span { color: #1e3a8a; }
+
+        /* ---------- QR ---------- */
+        #screen-qr { align-items: center; }
+        .qr-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            text-align: center;
+            max-width: 40rem;
+            width: 100%;
+            background: #fff;
+            border: 4px solid #000;
+            border-radius: 2.5rem;
+            box-shadow: 10px 10px 0 #000;
+            padding: 2rem;
+        }
+        .qr-card h2 { margin: 0; font-size: clamp(1.5rem, 3.5vw, 2.4rem); font-weight: 900; text-transform: uppercase; color: #2563eb; line-height: 1.15; }
+        .qr-card img { width: min(18rem, 70vw); height: min(18rem, 70vw); object-fit: cover; border-radius: 1rem; border: 2px solid #f3f4f6; }
+        .qr-card .hint { margin: 0; font-size: 1.1rem; font-weight: 700; color: #475569; }
+        .qr-card .hint.all-in { color: #15803d; font-weight: 900; font-size: 1.3rem; }
+        .joined { width: 100%; display: flex; flex-direction: column; gap: 0.6rem; }
+        .joined-count { font-size: 1.4rem; font-weight: 700; }
+        .joined-count b { font-size: 1.8rem; font-weight: 900; color: #2563eb; }
+        .joined-bar { height: 1rem; border: 3px solid #000; border-radius: 999px; overflow: hidden; background: #f3f4f6; }
+        .joined-bar span { display: block; height: 100%; width: 0; background: #22c55e; transition: width 0.3s; }
+        .joined-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; max-height: 6.5rem; overflow-y: auto; }
+        .joined-list li { font-weight: 700; font-size: 0.95rem; background: #dcfce7; border: 2px solid #000; border-radius: 999px; padding: 0.15rem 0.7rem; }
+        .qr-box { width: min(18rem, 70vw); height: min(18rem, 70vw); display: flex; align-items: center; justify-content: center; }
+        .qr-box img, .qr-box canvas { width: 100% !important; height: 100% !important; image-rendering: pixelated; }
+        .join-code { margin: -0.5rem 0 0; font-size: 1.05rem; font-weight: 700; color: #475569; overflow-wrap: anywhere; }
+        .join-code b { color: #000; font-size: 1.6rem; letter-spacing: 0.15em; }
+        .join-code a { color: #2563eb; }
+        .join-code .warn-local { display: block; margin-top: 0.4rem; font-size: 0.85rem; color: #b45309; }
+        .demo-btn { font-family: inherit; font-size: 0.85rem; font-weight: 700; color: #6b7280; background: none; border: 2px dashed #9ca3af; border-radius: 0.6rem; padding: 0.4rem 0.8rem; cursor: pointer; }
+
+        /* ---------- Rounds: one round per screen ---------- */
+        #screen-rounds { align-items: center; }
+        .round-stage {
+            background: #4f46e5;
+            border: 6px solid #000;
+            border-radius: 3rem;
+            padding: 1.5rem;
+            box-shadow: 12px 12px 0 rgba(0, 0, 0, 0.12);
+        }
+        .round-card {
+            width: min(24rem, calc(100vw - 6rem));
+            background: #fff;
+            border: 4px solid #000;
+            border-radius: 2.5rem;
+            box-shadow: 8px 8px 0 #000;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .round-card h3 { margin: 0; text-align: center; font-size: 1.6rem; font-weight: 900; font-style: italic; text-transform: uppercase; color: #2563eb; }
+        /* Each part of the timer panel has its "i" on its top-right corner */
+        .part { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+        .part > .info-wrap { position: absolute; right: -0.9rem; top: -0.9rem; z-index: 2; }
+        .part > .info-wrap .info-btn { width: 2rem; height: 2rem; font-size: 1rem; border-width: 2px; }
+        .prep-title {
+            margin: 0 0 1.5rem;
+            text-align: center;
+            font-size: clamp(1.6rem, 4vw, 2.8rem);
+            font-weight: 900;
+            color: #2563eb;
+            line-height: 1.15;
+        }
+        .minutes { display: flex; align-items: center; gap: 0.6rem; background: #f9fafb; border: 2px solid #000; border-radius: 0.75rem; padding: 0.4rem 0.6rem; }
+        .minutes input { width: 4rem; font-family: inherit; font-size: 1.3rem; font-weight: 900; text-align: center; border: 3px solid #000; border-radius: 0.4rem; }
+        .minutes span { font-weight: 900; text-transform: uppercase; }
+        .timer {
+            width: 100%;
+            text-align: center;
+            font-size: 3.2rem;
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 2px 2px 0 #000;
+            background: #000;
+            color: #facc15;
+            border: 2px solid #facc15;
+            border-radius: 1.5rem;
+            padding: 1.2rem 0.5rem;
+        }
+        .timer.done { color: #ef4444; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; width: 100%; }
+        .controls button {
+            font-family: inherit;
+            font-size: 1.15rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #fff;
+            border: 3px solid #000;
+            border-radius: 0.75rem;
+            box-shadow: 0 5px 0 #000;
+            padding: 0.9rem 0.5rem;
+            cursor: pointer;
+        }
+        .controls button:active { transform: translateY(3px); box-shadow: 0 2px 0 #000; }
+        .controls button:disabled { opacity: 0.5; cursor: default; }
+        .controls .start { background: #22c55e; }
+        .controls .start.running { background: #f97316; }
+        .controls .next { background: #ef4444; }
+        .controls .reset { grid-column: 1 / -1; background: #f3f4f6; color: #000; font-size: 0.8rem; letter-spacing: 0.15em; padding: 0.5rem; }
+        .pairs { width: 100%; text-align: center; background: #eef2ff; border: 2px dashed #c7d2fe; border-radius: 1.5rem; padding: 0.9rem; }
+        .pairs small { display: block; font-size: 0.65rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; color: #818cf8; margin-bottom: 0.25rem; }
+        .pairs .reminder { display: block; font-size: 1.1rem; color: #312e81; line-height: 1.3; }
+        .pairs .aspect-list { margin-top: 0.5rem; text-align: left; }
+        .pairs ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+        .pairs li { font-size: 1rem; font-weight: 900; color: #312e81; line-height: 1.25; }
+
+        /* ---------- End ---------- */
+        /* ---------- Discussion topics ---------- */
+        .ask { text-align: center; font-size: clamp(1.2rem, 2.6vw, 1.6rem); font-weight: 700; margin: -0.75rem 0 1.5rem; }
+        .tabs { width: 100%; max-width: 64rem; margin: 0 auto; }
+        .tab-bar { display: flex; gap: 0.5rem; padding-left: 1.5rem; }
+        .mode-btn {
+            font-family: inherit; font-size: clamp(1.1rem, 2.4vw, 1.5rem); font-weight: 900;
+            background: #e5e7eb; color: #4b5563;
+            border: 3px solid #000; border-bottom: none;
+            border-radius: 1.25rem 1.25rem 0 0;
+            padding: 0.8rem 1.6rem; cursor: pointer;
+            position: relative; top: 3px;
+        }
+        .mode-btn:hover { background: #f3f4f6; color: #000; }
+        .mode-btn:focus-visible { outline: 4px solid #2563eb; outline-offset: 2px; }
+        /* Active tab joins the panel below it */
+        .mode-btn[aria-selected="true"] { background: #fef9c3; color: #000; z-index: 1; padding-bottom: calc(0.8rem + 3px); top: 3px; }
+        .tab-panel {
+            background: #fef9c3; border: 3px solid #000; border-radius: 1.5rem;
+            box-shadow: 6px 6px 0 #000; padding: 1.25rem 1.5rem 1.5rem;
+        }
+        .same-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.6rem; margin: 0 0 1rem; font-weight: 900; font-size: 1.1rem; }
+        .same-row[hidden] { display: none; }
+        /* On/off switch: same topic for all teams */
+        .switch {
+            display: inline-flex; align-items: center; gap: 0.7rem; cursor: pointer;
+            font-family: inherit; font-size: 1.1rem; font-weight: 900; color: #000;
+            background: none; border: none; padding: 0.2rem;
+        }
+        .switch .track {
+            position: relative; width: 3.6rem; height: 2rem; flex-shrink: 0;
+            background: #d1d5db; border: 3px solid #000; border-radius: 999px; transition: background 0.2s;
+        }
+        .switch .knob {
+            position: absolute; top: 0.15rem; left: 0.15rem; width: 1.45rem; height: 1.45rem;
+            background: #fff; border: 2px solid #000; border-radius: 50%; transition: left 0.2s;
+        }
+        .switch[aria-checked="true"] .track { background: #22c55e; }
+        .switch[aria-checked="true"] .knob { left: calc(100% - 1.6rem); }
+        .switch .state { min-width: 2.2rem; text-align: left; color: #6b7280; }
+        .switch[aria-checked="true"] .state { color: #15803d; }
+        .switch:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; border-radius: 0.5rem; }
+        .tab-help { margin: 0 0 1rem; font-size: 1.1rem; font-weight: 700; color: #334155; text-align: center; }
+        .now {
+            text-align: center; font-size: clamp(1.4rem, 3.5vw, 2.4rem); font-weight: 900;
+            background: #fff; border: 3px dashed #000; border-radius: 1.5rem;
+            padding: 1rem; margin-bottom: 1.25rem; color: #6b7280;
+        }
+        .now.live { background: #a3e635; border-style: solid; color: #000; }
+        .now.hidden-topic { background: #1e1b4b; color: #fde047; border-style: solid; }
+        .topic-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; }
+        .topic-btn {
+            font-family: inherit; font-size: 1.15rem; font-weight: 900; text-align: left;
+            background: #fff; color: #000; border: 3px solid #000; border-radius: 1rem;
+            box-shadow: 0 5px 0 #000; padding: 0.9rem 1rem; cursor: pointer;
+        }
+        .topic-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #000; }
+        .topic-btn.sent { background: #e5e7eb; color: #6b7280; }
+        .topic-btn.sent::after { content: " ✓ sent"; font-size: 0.85rem; }
+        .shuffle-box { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+        .shuffle-box .teams-note { margin: 0.75rem 0 0; }
+        .topic-list[hidden], .shuffle-box[hidden] { display: none; }
+
+        /* ---------- Plan reports ---------- */
+        .stage-row { display: flex; align-items: center; justify-content: center; gap: 2.5rem; flex-wrap: wrap; }
+        .report-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+            width: 15rem; font-family: inherit; text-align: center;
+            background: #ef4444; color: #fff;
+            border: 4px solid #000; border-radius: 2rem; box-shadow: 0 8px 0 #000;
+            padding: 1.4rem 1rem; cursor: pointer;
+        }
+        .report-wrap { position: relative; }
+        .report-wrap[hidden] { display: none; }
+        .report-wrap > .info-wrap { position: absolute; top: -0.9rem; right: -0.9rem; z-index: 2; }
+        .report-btn small:empty { display: none; }
+        .report-btn:active { transform: translateY(4px); box-shadow: 0 4px 0 #000; }
+        .report-btn:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
+        .report-btn .mic { font-size: 2.6rem; line-height: 1; }
+        .report-btn .report-label { font-size: 1.5rem; font-weight: 900; line-height: 1.15; }
+        .report-btn small { font-size: 0.9rem; font-weight: 700; line-height: 1.25; }
+        .report-btn.confirm { background: #000; color: #fde047; }
+        .report-count { text-align: center; font-size: 1.4rem; font-weight: 700; margin-bottom: 1rem; }
+        .report-list { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); }
+        .report { background: #fff; border: 3px solid #000; border-radius: 1.25rem; box-shadow: 0 5px 0 #000; padding: 0.9rem 1rem; }
+        .report h3 { margin: 0 0 0.3rem; font-size: 1.1rem; font-weight: 900; display: flex; justify-content: space-between; gap: 0.5rem; }
+        .report .status { font-size: 0.85rem; font-weight: 900; padding: 0.1rem 0.6rem; border-radius: 999px; background: #fef3c7; border: 2px solid #000; white-space: nowrap; }
+        .report.done { background: #ecfccb; }
+        .report.done .status { background: #22c55e; color: #fff; }
+        .report .members { font-size: 0.9rem; font-weight: 900; color: #4338ca; margin-bottom: 0.35rem; }
+        .report p { margin: 0; font-size: 1rem; line-height: 1.4; color: #334155; }
+        .report.waiting p { font-style: italic; color: #94a3b8; }
+
+        /* ---------- Teams ---------- */
+        .teams-note { margin: -0.75rem 0 1.5rem; text-align: center; font-weight: 700; font-size: 1.15rem; color: #475569; }
+        .teams { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 1.25rem; }
+        .team {
+            background: #a3e635;
+            border: 3px solid #000;
+            border-radius: 1.5rem;
+            box-shadow: 0 6px 0 #000;
+            padding: 0.9rem 1rem;
+        }
+        .team h3 { margin: 0 0 0.4rem; font-size: 1rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; }
+        .team ul { list-style: none; margin: 0; padding: 0; }
+        .team li { font-size: 1.3rem; font-weight: 900; line-height: 1.3; }
+        .team li.waiting { color: #3f6212; font-style: italic; font-weight: 700; }
+        @keyframes pop { 0% { transform: scale(0.92); opacity: 0.4; } 100% { transform: scale(1); opacity: 1; } }
+        .teams.shuffled .team { animation: pop 0.35s ease-out; }
+        .teams-actions { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 2rem; }
+
+        #screen-end { align-items: center; justify-content: center; text-align: center; gap: 1.5rem; }
+        #screen-end h2 { margin: 0; font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; color: #2563eb; }
+        #screen-end h3 { margin: 0; font-size: 1.4rem; font-weight: 900; font-style: italic; text-transform: uppercase; }
+        .feedback { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+        .feedback button { font-size: 1.2rem; padding: 0.9rem 1.8rem; letter-spacing: 0; text-transform: none; }
     </style>
 </head>
 <body>
 
-    <div class="app">
-        <!-- SCREEN 1: WELCOME -->
-        <h1>Speaking-Practice Center</h1>
-        <p class="subtitle">Choose the type of activity here</p>
-        <div id="activity-grid" class="grid"></div>
+    <div class="app" id="app">
+        <!-- SCREEN 1: WELCOME (clusters → activities) -->
+        <section id="screen-welcome" class="screen">
+            <h1>Speaking-Practice Center</h1>
+            <p class="subtitle" id="subtitle">Choose the type of activity here</p>
+            <div id="activity-grid" class="grid"></div>
+        </section>
+
+        <!-- SCREEN 2: SCENARIOS -->
+        <section id="screen-scenarios" class="screen" hidden>
+            <div class="top-bar">
+                <button class="back-btn" data-go="welcome">← Go back</button>
+                <span class="step-tag" id="scenarios-tag"></span>
+            </div>
+            <div class="scenarios">
+                <div>
+                    <h2 class="screen-title" id="choices-title">Choose a scenario</h2>
+                    <div id="scenario-list" class="scenario-list"></div>
+                </div>
+                <!-- Topic on top, scenario image in the middle, button at the bottom -->
+                <div class="scenario-choice">
+                    <p id="scenario-chosen">Choose a scenario to proceed</p>
+                    <div class="scenario-image" id="scenario-image" hidden>
+                        <img id="scenario-img" alt="" hidden>
+                        <span id="scenario-img-placeholder">Image</span>
+                    </div>
+                    <button class="btn-go" id="scenario-next" hidden>Next step →</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 3: CLASS SIZE + GROUPS SUMMARY -->
+        <section id="screen-setup" class="screen" hidden>
+            <div class="top-bar">
+                <button class="back-btn" data-go="scenarios">← Go back</button>
+                <span class="step-tag" data-scenario-name></span>
+            </div>
+            <div class="setup">
+                <!-- Class level: what comes next depends on it -->
+                <div class="level-pick">
+                    <h2 id="level-label">Choose the class level</h2>
+                    <div class="level-options" role="radiogroup" aria-labelledby="level-label">
+                        <button class="level-btn" role="radio" aria-checked="false" data-level="A1–A2">A1–A2</button>
+                        <button class="level-btn" role="radio" aria-checked="false" data-level="B1+">B1+</button>
+                    </div>
+                </div>
+                <h2>Enter the number of students in the class (4–45)</h2>
+                <div class="size-row">
+                    <input type="number" id="input-students" min="4" max="45" value="20" aria-label="Number of students">
+                    <button class="btn-enter" id="btn-enter">Enter</button>
+                </div>
+                <div class="error" id="size-error" role="alert" hidden>Out of range (4–45)</div>
+                <div class="summary" id="summary" hidden>
+                    <p class="label">Summary:</p>
+                    <div class="total">Total groups: <b id="total-groups"></b></div>
+                    <div class="groups" id="groups-list"></div>
+                </div>
+                <p class="level-missing" id="level-missing" hidden>Choose the class level to continue.</p>
+                <div><button class="btn-go" id="setup-next" data-go="qr" hidden>Next step →</button></div>
+            </div>
+        </section>
+
+        <!-- SCREEN 4: QR (alone, so students only see this) -->
+        <section id="screen-qr" class="screen" hidden>
+            <div class="top-bar" style="align-self: stretch;">
+                <button class="back-btn" data-go="setup">← Go back</button>
+                <span class="step-tag" data-scenario-name></span>
+            </div>
+            <div class="qr-card">
+                <h2>Students, please scan this QR code</h2>
+                <div class="qr-box" id="qr-box" role="img" aria-label="QR code for students to join"></div>
+                <p class="join-code" id="join-code"></p>
+                <!-- Sign-up tracker: each student who joins through the QR is announced here -->
+                <div class="joined" id="joined" aria-live="polite">
+                    <div class="joined-count"><b id="joined-n">0</b> of <span id="joined-total">0</span> students joined</div>
+                    <div class="joined-bar"><span id="joined-bar"></span></div>
+                    <ul class="joined-list" id="joined-list"></ul>
+                </div>
+                <p class="hint" id="qr-hint">When everyone has joined, press Next step.</p>
+                <button class="btn-go" id="qr-next">Next step →</button>
+                <!-- Prototype only: stands in for the real-time connection with the phones -->
+                <button class="demo-btn" id="demo-join">+ Simulate a student joining (prototype)</button>
+            </div>
+        </section>
+
+        <!-- SCREEN 4b: TEAMS (Planning: fixed teams for the whole activity) -->
+        <section id="screen-teams" class="screen" hidden>
+            <div class="top-bar">
+                <button class="back-btn" data-go="qr">← Go back</button>
+                <span class="step-tag" data-scenario-name></span>
+            </div>
+            <h2 class="prep-title">Get together with your team</h2>
+            <p class="teams-note">These teams stay the same for the whole activity.</p>
+            <div class="teams" id="teams-list"></div>
+            <div class="teams-actions">
+                <button class="btn-small" id="teams-shuffle">↻ Shuffle teams</button>
+                <button class="btn-go" id="teams-next">Next step →</button>
+            </div>
+        </section>
+
+        <!-- SCREEN 4c: DISCUSSION TOPICS (Planning) -->
+        <section id="screen-topics" class="screen" hidden>
+            <div class="top-bar">
+                <button class="back-btn" data-go="teams">← Go back</button>
+                <span class="step-tag" data-scenario-name></span>
+            </div>
+            <h2 class="prep-title">Time to plan!</h2>
+            <p class="ask">Do you want to choose the topics <b>manually</b> or <b>at random</b>?</p>
+            <div class="tabs">
+                <div class="tab-bar" role="tablist" aria-label="How to choose the topics">
+                    <button class="mode-btn" role="tab" aria-selected="true" aria-checked="true" data-mode="manual" aria-controls="topics-panel">👆 Manually</button>
+                    <button class="mode-btn" role="tab" aria-selected="false" aria-checked="false" data-mode="shuffle" aria-controls="topics-panel">🔀 At random</button>
+                </div>
+                <div class="tab-panel" id="topics-panel" role="tabpanel">
+                    <!-- At random: the teacher decides if all teams plan the same aspect or different ones. Manually: all teams get the topic the teacher taps -->
+                    <div class="same-row" id="same-row" hidden>
+                        <button class="switch" id="same-switch" role="switch" aria-checked="false">
+                            <span>Same topic for all teams</span>
+                            <span class="track" aria-hidden="true"><span class="knob"></span></span>
+                            <span class="state" id="same-state">Off</span>
+                        </button>
+                    </div>
+                    <p class="tab-help" id="tab-help">Tap a topic to send it. Everyone sees it on the screen and on their phones.</p>
+                    <div class="now" id="topic-now">No topic sent yet</div>
+                    <div id="topics-manual" class="topic-list"></div>
+                    <div id="topics-shuffle" class="shuffle-box" hidden>
+                        <button class="btn-go" id="topic-shuffle">🔀 Shuffle and send</button>
+                        <p class="teams-note" id="shuffle-left"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="teams-actions">
+                <span></span>
+                <button class="btn-go" id="topics-next">Next step →</button>
+            </div>
+        </section>
+
+        <!-- SCREEN 5: ROUNDS (one round at a time) -->
+        <section id="screen-rounds" class="screen" hidden>
+            <div class="top-bar" style="align-self: stretch;">
+                <button class="back-btn" id="rounds-back">← Go back</button>
+                <span class="step-tag" id="round-tag"></span>
+            </div>
+            <h2 class="prep-title" id="prep-title" hidden>Prepare your role, use the questions on your mobile</h2>
+            <div class="stage-row">
+                <div class="round-stage">
+                    <div class="round-card" id="round-card"></div>
+                </div>
+                <!-- Planning: the teacher can end the practice at any round and ask for the reports -->
+                <div class="report-wrap" id="report-wrap" hidden>
+                    <button class="report-btn" id="request-reports">
+                        <span class="mic" aria-hidden="true">🎤</span>
+                        <span class="report-label">Request plan reports</span>
+                        <small></small>
+                    </button>
+                    <span class="info-wrap" id="report-info"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 5b: PLAN REPORTS (Planning) -->
+        <section id="screen-reports" class="screen" hidden>
+            <div class="top-bar">
+                <button class="back-btn" id="reports-back">← Back to the round</button>
+                <span class="step-tag" data-scenario-name></span>
+            </div>
+            <h2 class="prep-title">Teams, report your plan</h2>
+            <p class="teams-note">Use the microphone on your phone. Speak, don't type!</p>
+            <div class="report-count" id="report-count"></div>
+            <p class="teams-note">Reports appear exactly as the phones transcribe them, without corrections.</p>
+            <div class="report-list" id="report-list"></div>
+            <div class="teams-actions">
+                <button class="btn-small" id="toggle-names" aria-pressed="false">👁 Show team names</button>
+                <!-- Prototype only: stands in for a team sending its voice report -->
+                <button class="demo-btn" id="demo-report">+ Simulate a team report (prototype)</button>
+                <button class="btn-go" data-go="end">Finish →</button>
+            </div>
+        </section>
+
+        <!-- SCREEN 6: END -->
+        <section id="screen-end" class="screen" hidden>
+            <div class="top-bar" style="align-self: stretch; margin-bottom: auto;">
+                <button class="back-btn" id="end-back">← Go back</button>
+            </div>
+            <h2>All rounds done!</h2>
+            <h3>Send feedback?</h3>
+            <div class="feedback">
+                <button class="btn-small fake-door" style="background:#facc15">To teacher</button>
+                <button class="btn-small fake-door" style="background:#22d3ee">To students</button>
+            </div>
+            <button class="back-btn" data-go="welcome" style="margin-bottom: auto;">Back to start</button>
+        </section>
     </div>
 
     <div id="bubble" class="bubble" role="tooltip"></div>
     <div id="toast" class="toast" role="status"></div>
+    <!-- Students who press "Call teacher" on their phone: team number only, oldest first -->
+    <div class="calls" id="calls" aria-live="assertive" hidden></div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
-        // Bubble texts and suggested CEFR levels come from
-        // "Definición Actividades_SPC_Homepage - burbujas.docx" (Claudio, 2026-10-28).
-        const ACTIVITIES = [
-            { name: "Role-play", color: "#facc15", available: true, level: "B–C",
-              text: "Students take on specific roles and act out simulated scenes or situations." },
-            { name: "Debate", color: "#f472b6", level: "B–C",
-              text: "A formal activity where teams defend opposing views on a controversial topic: first they plan as a team, then they interact with the other team." },
-            { name: "Questionnaires", color: "#4ade80", level: "A+",
-              text: "Students design or complete surveys to collect information from their classmates." },
-            { name: "Dice", color: "#fb923c", level: "A+",
-              text: "Rolling dice adds chance to speaking practice: the roll decides the topic to discuss or the grammar structure to use." },
-            { name: "True/False", color: "#c084fc", level: "B–C",
-              text: "Students hear or read statements and decide if they are true or false, asking questions and/or justifying their answer." },
-            { name: "Interview", color: "#22d3ee", level: "A+",
-              text: "One student gets specific information from another through prepared or spontaneous questions, in a given context." },
-            { name: "Ranking", color: "#f87171", level: "A+",
-              text: "A discussion where students put a list of items in order of importance or preference." },
-            { name: "Problem Solv.", fullName: "Problem Solving", color: "#a3e635", level: "B–C",
-              text: "Students work together to find a solution to a dilemma or a hypothetical situation." },
-            { name: "Drawing", color: "#fbbf24", level: "A+",
-              text: "Students draw from spoken instructions, or describe a picture for others to draw (\"describe and draw\")." },
-            { name: "Jigsaw", color: "#2dd4bf", level: "A+",
-              text: "A cooperative task where each student holds one piece of the information needed to complete it." },
-            { name: "I'd rather", color: "#818cf8", level: "B–C",
-              text: "Students express and explain their preferences between two options." },
-            { name: "Guessing", color: "#34d399", level: "A+",
-              text: "Students identify a person, object, word or situation through clues or yes/no questions." },
-            { name: "Discussion", color: "#38bdf8", level: "B–C",
-              text: "An exchange of ideas on a specific topic, in small groups or with the whole class." },
-            { name: "T/F Trivia", color: "#fb7185", level: "B–C",
-              text: "Students receive a statement about world issues, and they have to discuss and vote as a team whether it is true or false before time runs out." },
+        // ---------- Real-time link between the teacher's screen and the phones ----------
+        // Paste the Firebase web config here (Firebase console › Project settings › Your apps).
+        // While it is null, the page works on its own: the "prototype" buttons simulate the phones.
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyABjG_5bZ-ZT7E7aZvbYDfZWr5X6HZYTng",
+            authDomain: "spc-prototype3.firebaseapp.com",
+            databaseURL: "https://spc-prototype3-default-rtdb.firebaseio.com",
+            projectId: "spc-prototype3",
+            storageBucket: "spc-prototype3.firebasestorage.app",
+            messagingSenderId: "18791534503",
+            appId: "1:18791534503:web:9a5adbe35bc7462a8ef082"
+        };
+
+        // Small store with the same calls for Firebase and for the local (no internet) mode.
+        // Paths are like "sessions/4821/students".
+        function makeStore() {
+            if (FIREBASE_CONFIG && window.firebase) {
+                if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+                const db = firebase.database();
+                return {
+                    live: true,
+                    watch: (path, cb) => db.ref(path).on('value', s => cb(s.val())),
+                    set: (path, val) => db.ref(path).set(val),
+                    push: (path, val) => db.ref(path).push(val).key,
+                    // Writes val only if nothing is there yet (one report per team). Resolves true if it was written.
+                    claim: (path, val) => db.ref(path).transaction(cur => cur === null ? val : undefined).then(r => r.committed)
+                };
+            }
+            // Local mode: an in-memory copy, shared with other tabs of this browser when the page is served from a web address
+            const KEY = 'spc-local-db';
+            let tree = {};
+            try { tree = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { tree = {}; }
+            const listeners = [];
+            const parts = path => path.split('/').filter(Boolean);
+            const get = path => parts(path).reduce((o, k) => (o && typeof o === 'object' && k in o) ? o[k] : null, tree);
+            function notify() {
+                listeners.forEach(l => {
+                    const json = JSON.stringify(get(l.path));
+                    if (json !== l.last) { l.last = json; l.cb(json === undefined ? null : JSON.parse(json)); }
+                });
+            }
+            function write(path, val) {
+                const ks = parts(path);
+                let o = tree;
+                ks.slice(0, -1).forEach(k => { if (!o[k] || typeof o[k] !== 'object') o[k] = {}; o = o[k]; });
+                if (val === null || val === undefined) delete o[ks[ks.length - 1]];
+                else o[ks[ks.length - 1]] = JSON.parse(JSON.stringify(val));
+                try { localStorage.setItem(KEY, JSON.stringify(tree)); } catch (e) { /* storage blocked: this tab only */ }
+                setTimeout(notify, 0);
+            }
+            window.addEventListener('storage', e => {
+                if (e.key !== KEY) return;
+                try { tree = JSON.parse(e.newValue) || {}; } catch (err) { return; }
+                notify();
+            });
+            return {
+                live: false,
+                watch: (path, cb) => { const l = { path, cb, last: '\u0000' }; listeners.push(l); setTimeout(notify, 0); },
+                set: (path, val) => { write(path, val); return Promise.resolve(); },
+                push: (path, val) => { const key = Date.now().toString(36) + Math.random().toString(36).slice(2, 6); write(path + '/' + key, val); return key; },
+                claim: (path, val) => { if (get(path) !== null) return Promise.resolve(false); write(path, val); return Promise.resolve(true); }
+            };
+        }
+
+        // Loads the Firebase scripts only when a config has been pasted above
+        function loadFirebase() {
+            if (!FIREBASE_CONFIG) return Promise.resolve();
+            const add = src => new Promise(res => {
+                const s = document.createElement('script');
+                s.src = src; s.onload = res; s.onerror = res;
+                document.head.appendChild(s);
+            });
+            const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+            return add(base + 'firebase-app-compat.js').then(() => add(base + 'firebase-database-compat.js'));
+        }
+
+        let store = makeStore();
+        loadFirebase().then(() => { if (FIREBASE_CONFIG && window.firebase) store = makeStore(); });
+        let sessionCode = null;      // 4 digits, shown under the QR
+        let sessionKey = null;       // what the session was made for (activity, choice, level, size)
+        const sp = path => 'sessions/' + sessionCode + (path ? '/' + path : '');
+        function publish(path, val) { if (sessionCode) store.set(sp(path), val); }
+
+        // Calls from the phones: shown on every screen until the teacher marks them as done
+        function renderCalls(calls) {
+            const box = document.getElementById('calls');
+            box.innerHTML = '';
+            const list = Object.entries(calls).sort((a, b) => a[1].t - b[1].t);
+            list.forEach(([id, c]) => {
+                const item = document.createElement('div');
+                item.className = 'call-item';
+                const who = c.team >= 0 ? 'Team ' + (c.team + 1) : 'A student';
+                item.append('✋ ' + who + ' is calling you');
+                const done = document.createElement('button');
+                done.textContent = '✓ Done';
+                done.onclick = () => publish('calls/' + id, null);
+                item.appendChild(done);
+                box.appendChild(item);
+            });
+            box.hidden = !list.length;
+        }
+
+        // Student page address for the QR: next to this page (works once both are published on https)
+        function studentLink() {
+            const url = new URL('student.html', location.href);
+            url.searchParams.set('s', sessionCode);
+            return url.href;
+        }
+
+        // A new session each time the class is set up again; students join it through the QR
+        function newSession() {
+            sessionCode = String(1000 + Math.floor(Math.random() * 9000));
+            store.set(sp(), {
+                info: { activity: state.activity.name, choice: state.scenario, level: state.level, classSize: state.classSize, created: Date.now() },
+                phase: 'join'
+            });
+            const link = studentLink();
+            const box = document.getElementById('qr-box');
+            box.innerHTML = '';
+            if (window.QRCode) new QRCode(box, { text: link, width: 512, height: 512, correctLevel: QRCode.CorrectLevel.M });
+            else box.textContent = 'QR not available offline';
+            const code = document.getElementById('join-code');
+            code.innerHTML = '';
+            code.append('Or open ', Object.assign(document.createElement('a'), { textContent: link.split('?')[0], href: link, target: '_blank', rel: 'noopener' }), ' · code ',
+                Object.assign(document.createElement('b'), { textContent: sessionCode }));
+            if (!store.live) code.appendChild(Object.assign(document.createElement('span'), {
+                className: 'warn-local', textContent: 'Phones are not connected yet: use the prototype button below to simulate students.' }));
+            const seen = new Set();
+            const code0 = sessionCode;
+            renderCalls({});
+            store.watch(sp('students'), students => {
+                if (code0 !== sessionCode || !students) return;
+                Object.entries(students).sort((a, b) => a[1].t - b[1].t).forEach(([id, st]) => {
+                    if (seen.has(id)) return;
+                    seen.add(id);
+                    studentJoined(st.name, id);
+                });
+            });
+            store.watch(sp('calls'), calls => {
+                if (code0 !== sessionCode) return;
+                renderCalls(calls || {});
+            });
+            store.watch(sp('reports'), r => {
+                if (code0 !== sessionCode || !reports.length) return;
+                reports = reports.map((old, t) => (r && r['t' + t]) ? r['t' + t].text : null);
+                const before = renderReports.lastDone || 0;
+                renderReports();
+                const done = reports.filter(Boolean).length;
+                if (done > before) showToast('✓ A team sent its plan report (' + done + ' of ' + reports.length + ')', true);
+            });
+        }
+        // Clusters, activities, CEFR levels and bubble texts come from
+        // "Definición Actividades_SPC_Homepage - ESTRUCTURA.docx" (Claudio, 2026-11-15).
+        // available: true sends the activity to the Scenarios flow (tested in Prototype 2 as Role-play).
+        const CLUSTERS = [
+            { name: "Interview", color: "#22d3ee", activities: [
+                { name: "Prepared", level: "A2–B1",
+                  text: "Students are given the purpose of the interview, and are given time to prepare questions." },
+                { name: "Spontaneous", level: "B1+",
+                  text: "Students are given the purpose of the interview, and are prompted with a sequence of different aspects of that context." }
+            ]},
+            { name: "True/False", color: "#c084fc", activities: [
+                { name: "Trivia", level: "B1+",
+                  text: "Students are given true or false world facts, and a text with a justification. The others have turns and time to make questions. Then vote to decide. Points are given to the ones who get it right, or the fact reader if no one gets it." },
+                { name: "Hot seat", level: "A2+",
+                  text: "One student makes a short statement and the class asks as many questions as possible. The others have turns and time to make questions. Then vote to decide. Points are given to the ones who get it right, or the fact reader if no one gets it." },
+                { name: "Truth and lies", level: "A2+",
+                  text: "Each group tells three stories, only one true; the class asks questions to find it. Then vote to decide. Points are given to the ones who get it right, or the fact reader if no one gets it." }
+            ]},
+            { name: "Pictures", color: "#fbbf24", activities: [
+                { name: "Differences", level: "A1+",
+                  text: "Pairs have two similar pictures and find the differences without looking at each other's. They speak them into their mics to show them on the teacher's console.",
+                  notes: ["Pictures change in a sequence."] },
+                { name: "Description", level: "A1+",
+                  text: "Teams say as many sentences as they can about a picture in two minutes. They speak them into their mics to show them on the teacher's console.",
+                  notes: ["Pictures change in a sequence."] }
+            ]},
+            { name: "Discussion", color: "#38bdf8", activities: [
+                { name: "Things in common", level: "A1+",
+                  text: "Pairs talk to discover as many things in common as they can." },
+                { name: "I'd rather", level: "A2+",
+                  text: "Students express and explain their preferences between two options.",
+                  notes: ["Teachers can enter options or use bank."] },
+                { name: "Debate", level: "B1+",
+                  text: "A formal activity where teams defend opposing views on a controversial topic: first they plan as a team, then they interact with the other team." },
+                { name: "Giving Opinions", level: "B1+",
+                  text: "An exchange of ideas on specific prompts (topics, statements, questions, etc.) in small groups or with the whole class.",
+                  notes: ["A moderator role is optional."] }
+            ]},
+            { name: "Problem Solving", color: "#a3e635", activities: [
+                // Role-play: text and level from the "burbujas" docx (2026-10-28); flow tested in Prototype 2
+                { name: "Role-play", level: "B–C", available: true,
+                  text: "Students take on specific roles and act out simulated scenes or situations." },
+                { name: "Decision making", level: "B1+",
+                  text: "Students work together to find a solution to a dilemma or a hypothetical situation." },
+                { name: "Ranking", level: "A1+",
+                  text: "A discussion where students put a list of items in order of importance or preference." },
+                { name: "Planning", level: "B1+", available: true,
+                  text: "Groups plan something together, such as a holiday on a budget." },
+                { name: "Item selection", level: "A2+",
+                  text: "Students choose a limited number of items from a list and justify their choice." }
+            ]},
+            { name: "Story telling", color: "#f472b6", activities: [
+                { name: "Hero's Journey", level: "B1+",
+                  text: "Students are prompted on the creation of a story stage by stage." }
+            ]},
+            // Fake door: more clusters later
             { name: "More...", color: "#fef08a" }
         ];
 
+        // Scenario and plan images: add "Scenario name": "image URL" when the images are ready
+        const SCENARIO_IMAGES = {};
+        const SCENARIOS = [
+            "Graduate Study Fair", "Street Market", "Hotel", "City Tour", "The Neighborhood", "Restaurant", "Department Store", "Medical Center", "Police Station", "Job Fair", "Tech Support", "Night Out", "Sports Center", "First Day at University", "Customer Service", "Real Estate Fair", "The City Hall", "Community Center"
+        ];
+
+        // Groups of 4–7 students for each class size (from Prototype 2)
+        const GROUPS_BY_SIZE = {
+            4: [4], 5: [5], 6: [6], 7: [7], 8: [4, 4], 9: [4, 5], 10: [5, 5],
+            11: [5, 6], 12: [6, 6], 13: [7, 6], 14: [7, 7], 15: [5, 5, 5],
+            16: [6, 5, 5], 17: [6, 6, 5], 18: [6, 6, 6], 19: [7, 6, 6], 20: [7, 7, 6],
+            21: [7, 7, 7], 22: [6, 6, 5, 5], 23: [7, 6, 5, 5], 24: [6, 6, 6, 6],
+            25: [7, 6, 6, 6], 26: [7, 7, 6, 6], 27: [7, 7, 7, 6], 28: [7, 7, 7, 7],
+            29: [6, 6, 6, 6, 5], 30: [6, 6, 6, 6, 6], 31: [7, 6, 6, 6, 6], 32: [7, 7, 6, 6, 6],
+            33: [7, 7, 7, 6, 6], 34: [7, 7, 7, 7, 6], 35: [7, 7, 7, 7, 7], 36: [6, 6, 6, 6, 6, 6],
+            37: [7, 6, 6, 6, 6, 6], 38: [7, 7, 6, 6, 6, 6], 39: [7, 7, 7, 6, 6, 6], 40: [7, 7, 7, 7, 6, 6],
+            41: [7, 7, 7, 7, 7, 6], 42: [7, 7, 7, 7, 7, 7], 43: [7, 6, 6, 6, 6, 6, 6], 44: [7, 7, 6, 6, 6, 6, 6],
+            45: [7, 7, 7, 6, 6, 6, 6]
+        };
+        // Role cards per scenario: Participant N gets role N (MATRIX_Participant_Roles_contextual.xlsx, reviewed by Claudio 2026-11-17)
+        const ROLE_PREP = [["What is your main problem today?", "How much money can you spend?", "What happens if you don't get the service?", "What options do you think you may have?"], ["Why are you VIP?", "What do you want to achieve with the service?", "What is the one thing that is more important to you from the service?", "What are extra things that could convince you?"], ["What are the best things about your service?", "What option prices do you have?", "How can people fund paying for your service?", "What complementary features does your service have?"], ["What is your tip number one for users in this situation?", "What do you need to know about a person to give advice?", "What is a \"red flag\" people should avoid?", "What makes you an expert on this?"], ["What is the big news today?", "Who do you need to interview to get the story?", "What type of questions can you ask each?", "Is your media tabloid or informative?"], ["What do you find interesting about this scenario?", "What are some particular questions you have?", "How convinced are you of becoming a customer in the future?", "How are you going to make a final decision?"], ["What does your company specialize in?", "What does your company want to achieve with this service?", "What happens if you can get this service?", "What characteristic is the most important to choose an option?"]];
+        const ROLES = {
+            "Graduate Study Fair": [["The student on a budget", "You want to do a master's degree, but you have little or no money. You need a cheap program or a full scholarship."], ["The premium student", "You want the best university and program. Money is not a problem because your family or your company pays, so you want exclusive benefits like famous scholars, high-tech facilities."], ["The university representative", "You sell the programs of your university. You know about courses, campus facilities, extracurricular activities, students' daily life, and scholarships. You want students to sign up today."], ["The education advisor", "You help students choose the right program. You know the pros and cons of all universities. You know about scholarships, loans, payment options and visas. You are also a career advisor."], ["The education journalist", "You are covering the fair to make a report on the news or social media about graduate education and career opportunities."], ["The worried parent", "You are here for your son or daughter. You want to gather information about programs and prices to pass it to them."], ["The HR manager", "You are looking for a training program or advanced degree for the employees of your own company."]],
+            "Street Market": [["The shopper on a budget", "You want to buy food and things for the week, but you have little money. You need the cheapest prices and maybe a discount."], ["The gourmet shopper", "You want the best and freshest products. Money is not a problem, so you want special, organic or rare products."], ["The stall owner", "You sell fruit, vegetables and local products. You know where everything comes from and how fresh it is. You want customers to buy today."], ["The market expert", "You help people choose the best stalls. You know the pros and cons of all sellers. You know about prices, quality, seasons and payment options. You also know about characteristics, properties, use, and alternatives for each product."], ["The food blogger", "You are covering the market to make a report on the news or social media about local food and prices."], ["The shopper with a list", "You are here for a family member. You want to gather information about products and prices to pass it to that person."], ["The restaurant buyer", "You are looking for fresh products in large quantities for your own restaurant."]],
+            "Hotel": [["The traveler on a budget", "You want a room for a few nights, but you have little money. You need a cheap price or a special offer. You don't care about luxury."], ["The VIP guest", "You want the best suite in the hotel. Money is not a problem because your company pays, so you want exclusive services like a spa or room service."], ["The receptionist", "You offer the rooms and services of the hotel. You know about prices, facilities and special offers. You want guests to book today."], ["The travel agent", "You help people choose the right hotel. You know the pros and cons of all hotels in the city. You know about prices, locations and payment options."], ["The travel journalist", "You are covering the hotel to make a review on the news or social media. You want to know the good and the bad about the hotel."], ["The assistant", "You are here for your boss. You want to gather information about rooms and services to pass it to that person."], ["The event organizer", "You are looking for rooms and a conference room for a big event of your own company."]],
+            "City Tour": [["The backpacker on a budget", "You want to see the city, but you have little money. You need a free or very cheap tour."], ["The VIP tourist", "You want the best tour of the city. Money is not a problem, so you want a private guide, a private car and exclusive experiences and places."], ["The tour guide", "You sell city tours. You know about the routes, the history and the prices. You want tourists to sign up today."], ["The tourist information officer", "You help visitors choose the right tour. You know the pros and cons of all tours. You know about prices, times, discounts and tickets."], ["The travel vlogger", "You are covering the city tour to make a video for social media and TV."], ["The friend of a tourist", "You are here for a friend who arrives next week. You want to gather information about tours to pass it to that person."], ["The school trip coordinator", "You are looking for a group tour for the foreign investors visiting your company soon."]],
+            "The Neighborhood": [["The tenant on a budget", "You want to live in this neighborhood, but you have little money. You need a cheap apartment."], ["The premium buyer", "You want the best house in the neighborhood. Money is not a problem, so you want extras like security, a garden and a pool."], ["The real estate agent", "You sell and rent houses in the neighborhood. You know about prices, services and transport. You want people to sign a contract today."], ["The local advisor", "You help people choose where to live. You know the pros and cons of every street. You know about safety, schools, transport and prices."], ["The local reporter", "You are covering the neighborhood to make a report on the news or social media about life in the area."], ["The relative of a newcomer", "You are here for a relative who wants to move. You want to gather information about the neighborhood to pass it to that person."], ["The small business owner", "You are looking for a place to open a shop or office for your own company in this neighborhood."]],
+            "Restaurant": [["The diner on a budget", "You want to eat out, but you have little money. You need a cheap menu or a special offer as filling and/or nutritious as possible."], ["The VIP diner", "You want the best table and the best food. Money is not a problem, so you want special dishes, good wine and exclusive service."], ["The waiter", "You offer the dishes and drinks of the restaurant. You know about the menu, the prices and the specials. You want customers to order today."], ["The food critic", "You help people choose the right dishes. You know the pros and cons of all the menu. You know about ingredients, allergies, prices and payment options."], ["The food journalist", "You are covering the restaurant to make a review on the news or social media."], ["The party planner", "You are here for a friend who wants to celebrate a birthday. You want to gather information about the menu and prices to pass it to that person."], ["The corporate client", "You are looking for a place for a business lunch or dinner of your own company."]],
+            "Department Store": [["The shopper on a budget", "You want new clothes or a gift, but you have little money. You need special sales and discounts."], ["The premium shopper", "You want the best brands. Money is not a problem, so you want exclusive products and a personal shopper."], ["The sales assistant", "You sell the products of the store. You know about sizes, brands, prices and sales. You want customers to buy today."], ["The personal shopper", "You help people choose the right products. You know the pros and cons of all brands. You know about quality, prices, returns and payment options."], ["The fashion influencer", "You are covering the store to make a report on social media about trends and sales."], ["The gift buyer", "You are here for someone else. You want to gather information about gifts and prices to pass it to that person."], ["The office manager", "You are looking for uniforms or gifts for the employees of your own company."]],
+            "Medical Center": [["The patient on a budget", "You need to see a doctor, but you have little money and no health insurance. You need a cheap or free option."], ["The premium patient", "You want the best doctor and the fastest service. Money is not a problem because you have very good insurance, so you want a private room and exclusive care."], ["The receptionist", "You offer the services of the medical center. You know about doctors, appointments, insurance and prices. You want patients to book an appointment today."], ["The health advisor", "You help patients choose the right treatment. You know the pros and cons of all options. You know about insurance, prices, payment options and paperwork."], ["The health journalist", "You are covering the medical center to make a report on the news or social media about health services."], ["The family member", "You are here for a sick relative. You want to gather information about doctors and treatments to pass it to that person."], ["The company health manager", "You are looking for medical check-ups for the employees of your own company."]],
+            "Police Station": [["The citizen with little time and money", "You need to report a robbery, you ended up with no money to move around the city so you need help with that. You need a fast and free solution. You may need a public defender."], ["The VIP citizen", "You need help with a serious problem. Money is not a problem because you have a lawyer, so you want fast and special attention. You can even pay for a private investigator."], ["The police officer", "You are in charge of a police station campaign to involve the community in security, activities, and sponsorship. You know about community needs, statistics, services, etc. You want people to become participants and benefactors today."], ["The legal advisor", "You help people choose the right procedure. You know the pros and cons of all options. You know about documents, fees, paperwork and rights."], ["The crime reporter", "You are covering the police station to make a report on the news or social media about safety in the city."], ["The witness", "You are here for a friend who had a problem. You want to gather information about what to do to pass it to that person."], ["The security company manager", "You are looking for advice and contacts on safety for your own company."]],
+            "Job Fair": [["The job seeker in a hurry", "You want a job, but you have little or no money now. You need a job that starts soon. You want to know everything about benefits and plans offered by the company."], ["The top professional", "You want the best job. Resources are not a problem: you can travel, wear exclusive suits, and move around in your luxurious car. You have a VIP network. You want a high position and exclusive benefits."], ["The recruiter", "You offer jobs in your company. You know about positions, salaries and benefits, as well as career opportunities. You want candidates to apply today."], ["The career advisor", "You help people choose the right job. You know the pros and cons of all companies. You know about salaries, contracts, career opportunities, training and paperwork."], ["The business journalist", "You are covering the job fair to make a report on the news or social media about jobs in the country."], ["The worried parent", "You are here for your son or daughter. You want to gather information about jobs to pass it to that person."], ["The startup founder", "You are looking for new employees and partners for your own company."]],
+            "Tech Support": [["The user on a budget", "Your device is broken, but you have little money. You need a cheap repair."], ["The premium user", "You want the best and fastest service. Money is not a problem because your company pays, so you want a new device or original spare parts, and other premium alternatives and services."], ["The technician", "You sell repairs and devices. You know about problems, solutions and prices. You want customers to pay for a service today."], ["The tech advisor", "You help people choose the right solution. You know the pros and cons of repairing or buying new. You know about warranties, prices and payment options."], ["The tech blogger", "You are covering tech support to make a review on social media or the news."], ["The grandchild", "You are here for your grandparent who has a problem with a device. You want to gather information to pass it to that person."], ["The IT manager", "You are looking for tech support for all the devices of your own company."]],
+            "Night Out": [["The guest on a budget", "You want to have a night out, but you have little money. You need cheap food and drinks, and cheap transport. Ideally, just free events."], ["The VIP guest", "You want the best party experience. Money is not a problem, so you want VIP access, special drinks and exclusive areas."], ["The party organizer", "You offer the party: music, food and decoration. You know about tickets, prices and the program. You want people to buy tickets today."], ["The party expert", "You help people plan the perfect night. You know the pros and cons of all parties in town. You know about prices, dress codes, transport and safety."], ["The social media reporter", "You are covering the night life of an area to make a report on social media or the news."], ["The friend of the host", "You are here for a friend who is organizing a party. You want to gather information to pass it to that person."], ["The company event planner", "You are looking for a party for the end-of-year celebration of your own company."]],
+            "Sports Center": [["The member on a budget", "You want to do sport, but you have little money. You need a cheap membership."], ["The premium member", "You want the best service. Money is not a problem, so you want a personal trainer, a private locker and exclusive classes."], ["The sports center manager", "You sell memberships and classes. You know about the facilities, timetables and prices. You want people to sign up today."], ["The fitness coach", "You help people choose the right activity. You know the pros and cons of all classes. You know about health, prices, plans and payment options."], ["The sports journalist", "You are covering the sports center to make a report on the news or social media."], ["The parent", "You are here for your child. You want to gather information about classes and prices to pass it to that person."], ["The HR manager", "You are looking for an alliance to sign a special benefit package for the employees of your own company."]],
+            "First Day at University": [["The student on a budget", "You are a new student, but you have little money. You need cheap food, transport and books."], ["The premium student", "You are a new student. Money is not a problem because your family pays, so you want the best services and exclusive activities."], ["The student ambassador", "You present the services of the university. You know about the campus, clubs and facilities. You want new students to join activities today."], ["The academic advisor", "You help new students choose the right courses. You know the pros and cons of all options. You know about grants, payment options and paperwork."], ["The student newspaper reporter", "You are covering the first day to make a report on the student news or social media."], ["The older sibling", "You are here for your younger brother or sister. You want to gather information about the university to pass it to that person."], ["The company recruiter", "You are looking for interns and future employees for your own company."]],
+            "Customer Service": [["The customer on a budget", "You have a problem with a product, but you have little money. You need a free solution or your money back."], ["The premium customer", "You have a problem with an expensive product. Money is not a problem, so you want a new product and special attention."], ["The customer service agent", "You offer solutions for customers. You know about warranties, returns and services. You want customers to be happy and buy again today."], ["The consumer rights advisor", "You help people choose the right solution. You know the pros and cons of all options. You know about consumer rights, warranties and paperwork."], ["The consumer journalist", "You are covering customer service to make a report on the news or social media about good and bad companies."], ["The customer's friend", "You are here for a friend who has a problem. You want to gather information to pass it to that person."], ["The business client", "You are looking for solutions for many products of your own company."]],
+            "Real Estate Fair": [["The buyer on a budget", "You want to buy or rent a home, but you have little money. You need a cheap property or good credit."], ["The premium buyer", "You want the best property. Money is not a problem, so you want exclusive extras like a view, a pool or a penthouse."], ["The real estate agent", "You sell houses and apartments. You know about locations, sizes and prices. You want people to sign a contract today."], ["The mortgage advisor", "You help people choose the right property. You know the pros and cons of all options. You know about loans, subsidies, payment options and paperwork."], ["The real estate journalist", "You are covering the fair to make a report on the news or social media about house prices."], ["The relative", "You are here for a relative who wants to buy a house. You want to gather information to pass it to that person."], ["The company buyer", "You are looking for offices or houses for your own company."]],
+            "The City Hall": [["The citizen on a budget", "You need a document or a permit, but you have little money. You need a cheap or free procedure."], ["The premium citizen", "You need a document fast. Money is not a problem, so you want express service and special attention."], ["The city hall officer", "You work at the city hall information counter, and offer the services. You know about documents, permits and fees. You want citizens to complete their paperwork today."], ["The legal advisor", "You help people choose the right procedure. You know the pros and cons of all options. You know about fees, documents, deadlines and paperwork."], ["The local journalist", "You are covering the city hall to make a report on the news or social media about public services."], ["The neighbor", "You are here for a neighbor who needs a document. You want to gather information to pass it to that person."], ["The entrepreneur", "You are looking for a permit to open your own company in the city."]],
+            "Community Center": [["The neighbor on a budget", "You want to take a class or join an activity, but you have little money. You need free or cheap options."], ["The premium neighbor", "You want the best activities for your free time and personal growth. Money is not a problem, so you want private classes and exclusive workshops."], ["The center coordinator", "You offer the classes and activities of the community center. You know about timetables, places and prices. You want neighbors to sign up today."], ["The community advisor", "You help people choose the right activity. You know the pros and cons of all programs. You know about funding, discounts and paperwork."], ["The community reporter", "You are covering the community center to make a report on the news or social media."], ["The grandparent's helper", "You are here for an older relative. You want to gather information about activities to pass it to that person."], ["The local business owner", "You are looking for a place to run workshops or events for your own company."]]
+        };
+
+        const ROUNDS_BY_GROUP_SIZE = { 4: 3, 5: 3, 6: 5, 7: 5 };
+        const PAIRS_BY_GROUP_SIZE = {
+            4: ["P1-P3 / P2-P4", "P1-P4 / P2-P3", "P1-P2 / P3-P4"],
+            5: ["(P1-P2-P5) / P3-P4", "(P3-P4-P5) / P1-P2", "(P5-P1-P4) / P2-P3"],
+            6: ["P1-P3 / P2-P4 / P5-P6", "P1-P4 / P2-P5 / P3-P6", "P1-P5 / P2-P6 / P3-P4", "P1-P2 / P3-P5 / P4-P6", "P1-P6 / P2-P3 / P4-P5"],
+            7: ["P1-P3 / P2-P4 / (P5-P6-P7)", "P1-P4 / P3-P5 / (P2-P6-P7)", "P2-P3 / P1-P6 / (P4-P5-P7)", "P1-P2 / P4-P6 / (P3-P5-P7)", "P3-P4 / P6-P5 / (P1-P2-P7)"]
+        };
+
+        // Help bubbles for the timer tools on the rounds screen: DRAFT by Claude (2026-11-15).
+        const HELP = {
+            time: { title: "Round time", text: "Set the minutes for this round, then press START. You can pause and change the time before starting again." },
+            controls: { title: "Start, Next and Reset", text: "START runs the clock (press again to pause). NEXT ends this round and moves on. RESET puts the clock back to the time you set." },
+            aspect: { title: "Aspect to plan", text: "When you press START, each team gets one aspect of the plan on their phone. Manually: all teams get the same aspect. At random: you choose if they get the same aspect or a different one." },
+            pairs: { title: "Pairs", text: "In every group, these participants talk to each other this round. Each student sees their participant number on their phone." }
+        };
+
+        const app = document.getElementById('app');
         const grid = document.getElementById('activity-grid');
         const bubble = document.getElementById('bubble');
         const toast = document.getElementById('toast');
-        let openCard = null;
+        const subtitle = document.getElementById('subtitle');
+        let openCard = null;      // element whose bubble is open
+        let openCluster = null;   // index of the open cluster
         let hideTimer = null;
         let toastTimer = null;
 
-        function showToast(message) {
+        const state = { level: null, activity: null, cluster: null, scenario: null, groups: [], classSize: 0, round: 1, totalRounds: 0, pairs: [] };
+
+        function showToast(message, top = false) {
             toast.textContent = message;
+            toast.classList.toggle('top', top);
             toast.classList.add('show');
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
         }
+        document.querySelectorAll('.fake-door').forEach(b => b.onclick = () => showToast('Coming soon!'));
 
-        function fillBubble(activity) {
+        // ---------- Screens ----------
+
+        function goTo(id, keepRound = false) {
+            closeBubble();
+            stopClock();
+            document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== 'screen-' + id);
+            app.classList.toggle('inner', id !== 'welcome' && id !== 'end');
+            // Leaving the welcome screen: the cluster tint stays only there
+            if (id === 'welcome' && openCluster !== null) setLayer(CLUSTERS[openCluster]);
+            else if (id !== 'welcome') setLayer(null);
+            if (id === 'rounds') { if (keepRound) renderRound(); else startRounds(); }
+            const PHASES = { qr: 'join', teams: 'teams', topics: 'topics', rounds: 'rounds', reports: 'reports', end: 'end' };
+            if (PHASES[id]) publish('phase', PHASES[id]);
+            document.querySelectorAll('[data-scenario-name]').forEach(e =>
+                e.textContent = (state.scenario || '') + (state.level && id !== 'setup' ? ' · ' + state.level : ''));
+            window.scrollTo(0, 0);
+        }
+        document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => goTo(b.dataset.go)));
+
+        function setLayer(cluster) {
+            document.body.classList.toggle('in-cluster', !!cluster);
+            if (cluster) document.body.style.setProperty('--layer-color', cluster.color);
+            else document.body.style.removeProperty('--layer-color');
+        }
+
+        // ---------- Bubbles ----------
+        // content: { tag, title, text, notes, level, tutorial }
+
+        function fillBubble(c) {
             bubble.innerHTML = '';
-            const title = document.createElement('h2');
-            title.textContent = activity.fullName || activity.name;
-            const text = document.createElement('p');
-            text.textContent = activity.text;
-            const level = document.createElement('div');
-            level.className = 'level';
-            level.textContent = 'Suggested CEFR level: ' + activity.level;
-            // Fake door: the quick YouTube tutorial does not exist yet
-            const tutorial = document.createElement('button');
-            tutorial.className = 'tutorial-btn';
-            tutorial.innerHTML = '<span aria-hidden="true">▶</span> Quick tutorial';
-            tutorial.onclick = () => showToast('Video tutorial coming soon!');
-            bubble.append(title, text, level, tutorial);
+            const add = (tagName, cls, text) => {
+                const el = document.createElement(tagName);
+                if (cls) el.className = cls;
+                if (text) el.textContent = text;
+                bubble.appendChild(el);
+                return el;
+            };
+            if (c.tag) add('p', 'cluster-tag', c.tag);
+            add('h2', '', c.title);
+            add('p', '', c.text);
+            if (c.notes) {
+                const list = add('ul');
+                c.notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; list.appendChild(li); });
+            }
+            if (c.level) add('div', 'level', 'Suggested CEFR level: ' + c.level);
+            if (c.tutorial) {
+                // Fake door: the quick YouTube tutorial does not exist yet
+                const t = add('button', 'tutorial-btn fake-door');
+                t.innerHTML = '<span aria-hidden="true">▶</span> Quick tutorial';
+                t.onclick = () => showToast('Video tutorial coming soon!');
+            }
         }
 
         function positionBubble(card) {
@@ -255,7 +1229,7 @@
             let left = r.left + r.width / 2 - width / 2;
             left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
 
-            // Show below the button unless there is no room; then show above
+            // Show below the element unless there is no room; then show above
             const spaceBelow = window.innerHeight - r.bottom;
             const below = spaceBelow > bubble.offsetHeight + 24 || r.top < bubble.offsetHeight + 24;
             bubble.classList.toggle('below', below);
@@ -267,9 +1241,11 @@
             bubble.style.setProperty('--tail-x', (r.left + r.width / 2 - left) + 'px');
         }
 
-        function openBubble(card, activity) {
+        let openedBy = null;
+        function openBubble(card, content, how = 'hover') {
             clearTimeout(hideTimer);
-            fillBubble(activity);
+            openedBy = how;
+            fillBubble(content);
             bubble.classList.add('open');
             positionBubble(card);
             openCard = card;
@@ -285,43 +1261,778 @@
             hideTimer = setTimeout(closeBubble, 200);
         }
 
-        ACTIVITIES.forEach(activity => {
+        // Makes an "i" button. Hovering `hoverArea` (mouse), focusing `focusEl` (keyboard)
+        // or tapping the "i" (touch) opens the bubble, pointing at `anchor`.
+        function makeInfo(label, content, { anchor, hoverArea, focusEl, inline } = {}) {
+            const info = document.createElement('button');
+            info.className = 'info-btn' + (inline ? ' info-inline' : '');
+            info.textContent = 'i';
+            info.setAttribute('aria-label', 'About ' + label);
+            const target = () => anchor || info;
+            info.onclick = (e) => {
+                e.stopPropagation();
+                // A click on a bubble already opened by hover keeps it open (pinned)
+                if (openCard === target() && openedBy === 'click') closeBubble();
+                else openBubble(target(), content, 'click');
+            };
+            const area = hoverArea || info;
+            area.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'touch') openBubble(target(), content); });
+            area.addEventListener('pointerleave', (e) => { if (e.pointerType !== 'touch' && openedBy !== 'click') closeSoon(); });
+            if (focusEl) [focusEl].forEach(el => {
+                el.addEventListener('focus', () => openBubble(target(), content));
+                el.addEventListener('blur', closeSoon);
+            });
+            return info;
+        }
+
+        // ---------- Welcome: clusters and activities ----------
+
+        function makeActivityCard(cluster, activity) {
             const card = document.createElement('div');
             card.className = 'card';
 
             const btn = document.createElement('button');
-            btn.className = 'btn-main';
-            btn.style.backgroundColor = activity.color;
+            btn.className = 'btn-main btn-activity';
+            btn.style.backgroundColor = cluster.color;
             btn.textContent = activity.name;
             btn.onclick = () => {
-                if (activity.available) showToast('Next step: the Scenarios screen (in progress).');
-                else showToast('Coming soon!');
+                if (activity.available) {
+                    state.activity = activity;
+                    state.cluster = cluster;
+                    document.getElementById('scenarios-tag').textContent = cluster.name + ' › ' + activity.name;
+                    renderChoices(activity.name);
+                    goTo('scenarios');
+                } else showToast('Coming soon!');
             };
+            if (!activity.available) { btn.classList.add('fake-door'); btn.title = 'Coming soon'; }
             card.appendChild(btn);
+            card.appendChild(makeInfo(activity.name, {
+                tag: cluster.name, title: activity.name, text: activity.text,
+                notes: activity.notes, level: activity.level, tutorial: true
+            }, { anchor: card, hoverArea: card, focusEl: btn }));
+            return card;
+        }
 
-            if (activity.text) {
-                const info = document.createElement('button');
-                info.className = 'info-btn';
-                info.textContent = 'i';
-                info.setAttribute('aria-label', 'About ' + (activity.fullName || activity.name));
-                info.onclick = (e) => {
-                    e.stopPropagation();
-                    if (openCard === card) closeBubble();
-                    else openBubble(card, activity);
-                };
-                card.appendChild(info);
+        const panel = document.createElement('section');
+        panel.className = 'panel';
+        panel.id = 'cluster-panel';
+        panel.hidden = true;
+        const clusterCards = [];
 
-                // Mouse: open on hover. Keyboard: open on focus.
-                card.addEventListener('pointerenter', (e) => {
-                    if (e.pointerType !== 'touch') openBubble(card, activity);
-                });
-                card.addEventListener('pointerleave', (e) => { if (e.pointerType !== 'touch') closeSoon(); });
-                btn.addEventListener('focus', () => openBubble(card, activity));
-                btn.addEventListener('blur', closeSoon);
+        // Put the panel right after the row that holds the open cluster
+        function placePanel() {
+            if (openCluster === null || panel.hidden) return;
+            const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+            const rowEnd = Math.min(Math.floor(openCluster / cols) * cols + cols - 1, clusterCards.length - 1);
+            clusterCards[rowEnd].after(panel);
+            const r = clusterCards[openCluster].getBoundingClientRect();
+            const p = grid.getBoundingClientRect();
+            panel.style.setProperty('--tail-x', (r.left + r.width / 2 - p.left) + 'px');
+        }
+
+        function closeCluster() {
+            if (openCluster === null) return;
+            clusterCards[openCluster].querySelector('button').setAttribute('aria-expanded', 'false');
+            panel.hidden = true;
+            openCluster = null;
+            setLayer(null);
+            subtitle.textContent = 'Choose the type of activity here';
+            closeBubble();
+        }
+
+        function openClusterAt(i) {
+            closeCluster();
+            const cluster = CLUSTERS[i];
+            openCluster = i;
+            clusterCards[i].querySelector('button').setAttribute('aria-expanded', 'true');
+
+            panel.innerHTML = '';
+            panel.style.setProperty('--panel-color', cluster.color);
+            panel.setAttribute('aria-label', cluster.name + ' activities');
+            const heading = document.createElement('h2');
+            heading.textContent = cluster.name + ' activities';
+            const list = document.createElement('div');
+            list.className = 'panel-grid';
+            cluster.activities.forEach(a => list.appendChild(makeActivityCard(cluster, a)));
+            panel.append(heading, list);
+            panel.hidden = false;
+            // Second layer: tint the page, fade the other clusters, show where we are
+            setLayer(cluster);
+            subtitle.innerHTML = '';
+            const crumb = document.createElement('span');
+            crumb.className = 'crumb';
+            crumb.textContent = cluster.name;
+            subtitle.append(crumb, ' › choose an activity');
+            placePanel();
+        }
+
+        CLUSTERS.forEach((cluster, i) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            const btn = document.createElement('button');
+            btn.className = 'btn-main btn-cluster';
+            btn.style.backgroundColor = cluster.color;
+            btn.textContent = cluster.name;
+            if (cluster.activities) {
+                const arrow = document.createElement('span');
+                arrow.className = 'arrow';
+                arrow.setAttribute('aria-hidden', 'true');
+                arrow.textContent = '▼';
+                btn.appendChild(arrow);
+                btn.setAttribute('aria-expanded', 'false');
+                btn.setAttribute('aria-controls', 'cluster-panel');
+                btn.onclick = () => { if (openCluster === i) closeCluster(); else openClusterAt(i); };
+            } else {
+                btn.classList.add('fake-door');
+                btn.title = 'Coming soon';
+                btn.onclick = () => showToast('Coming soon!');
             }
-
+            card.appendChild(btn);
             grid.appendChild(card);
+            clusterCards.push(card);
         });
+        grid.appendChild(panel);
+
+        // ---------- Scenarios ----------
+
+        // Plans for Problem Solving › Planning (Claudio, 2026-11-15)
+        const PLANS = [
+            "A night out", "A trip out of town", "A family gathering", "A date", "A sports activity",
+            "A holiday on a budget", "A surprise party", "A school event", "A weekend with a visitor", "A charity day",
+            "A peaceful demonstration", "An environmental campaign", "A cultural activity"
+        ];
+
+        // First screen of each activity that has one: a list to choose from.
+        // next: the screen that follows; null = not built yet (fake door).
+        const CHOICES = {
+            "Role-play": { title: "Choose a scenario", empty: "Choose a scenario to proceed", label: "Topic", list: SCENARIOS, next: 'setup' },
+            "Planning":  { title: "Choose a plan type", empty: "Choose a plan type to proceed", label: "Plan type",  list: PLANS,     next: 'setup' }
+        };
+
+        const scenarioList = document.getElementById('scenario-list');
+        const scenarioChosen = document.getElementById('scenario-chosen');
+        const scenarioNext = document.getElementById('scenario-next');
+        let currentChoices = null;
+
+        function renderChoices(activityName) {
+            currentChoices = CHOICES[activityName];
+            state.scenario = null;
+            state.classSize = 0;
+            resetJoined();
+            document.getElementById('choices-title').textContent = currentChoices.title;
+            scenarioChosen.textContent = currentChoices.empty;
+            scenarioChosen.classList.remove('chosen');
+            scenarioNext.hidden = true;
+            document.getElementById('scenario-image').hidden = true;
+            scenarioList.innerHTML = '';
+            currentChoices.list.forEach(sc => {
+                const row = document.createElement('div');
+                row.className = 'scenario-row';
+                const btn = document.createElement('button');
+                btn.className = 'scenario-item';
+                btn.textContent = sc;
+                btn.setAttribute('aria-pressed', 'false');
+                btn.onclick = () => {
+                    scenarioList.querySelectorAll('.scenario-item').forEach(b => b.setAttribute('aria-pressed', 'false'));
+                    btn.setAttribute('aria-pressed', 'true');
+                    state.scenario = sc;
+                    scenarioChosen.textContent = currentChoices.label + ': ' + sc;
+                    scenarioChosen.classList.add('chosen');
+                    scenarioNext.hidden = false;
+                    const img = document.getElementById('scenario-img');
+                    const src = SCENARIO_IMAGES[sc];
+                    document.getElementById('scenario-image').hidden = false;
+                    img.hidden = !src;
+                    document.getElementById('scenario-img-placeholder').hidden = !!src;
+                    if (src) { img.src = src; img.alt = sc; }
+                };
+                row.appendChild(btn);
+                scenarioList.appendChild(row);
+            });
+        }
+        scenarioNext.onclick = () => {
+            if (currentChoices.next) goTo(currentChoices.next);
+            else showToast('Next screens: coming soon!');
+        };
+
+        // ---------- Class size and groups ----------
+
+        const sizeInput = document.getElementById('input-students');
+
+        function calculateGroups() {
+            const val = parseInt(sizeInput.value, 10);
+            const ok = !isNaN(val) && val >= 4 && val <= 45;
+            document.getElementById('size-error').hidden = ok;
+            document.getElementById('summary').hidden = !ok;
+            if (!ok) { updateSetupNext(); return; }
+            state.groups = isPlanning() ? pairGroups(val) : GROUPS_BY_SIZE[val];
+            state.classSize = val;
+            updateSetupNext();
+            document.getElementById('total-groups').textContent = state.groups.length;
+            const list = document.getElementById('groups-list');
+            list.innerHTML = '';
+            state.groups.forEach((n, i) => {
+                const d = document.createElement('div');
+                d.innerHTML = `Group ${i + 1}: <span>${n} members</span>`;
+                list.appendChild(d);
+            });
+        }
+        document.getElementById('btn-enter').onclick = calculateGroups;
+        sizeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') calculateGroups(); });
+        sizeInput.addEventListener('input', () => {
+            document.getElementById('summary').hidden = true;
+            updateSetupNext();
+        });
+
+        // Next step needs both the class size and the level
+        function updateSetupNext() {
+            const sized = !document.getElementById('summary').hidden;
+            document.getElementById('setup-next').hidden = !(sized && state.level);
+            document.getElementById('level-missing').hidden = !(sized && !state.level);
+        }
+        document.querySelectorAll('.level-btn').forEach(btn => btn.onclick = () => {
+            document.querySelectorAll('.level-btn').forEach(b => b.setAttribute('aria-checked', 'false'));
+            btn.setAttribute('aria-checked', 'true');
+            state.level = btn.dataset.level;
+            updateSetupNext();
+        });
+
+        // ---------- QR: sign-up tracker ----------
+
+        // Planning: groups of 2; an odd class has one group of 3 (MATRIX_Class_Size-Groups_PLANNING.xlsx)
+        function isPlanning() { return !!state.activity && state.activity.name === 'Planning'; }
+        function pairGroups(n) { return n % 2 ? [3, ...Array((n - 3) / 2).fill(2)] : Array(n / 2).fill(2); }
+
+        const SAMPLE_NAMES = ["Sofía", "Benjamín", "Martina", "Agustín", "Florencia", "Vicente", "Isidora", "Tomás",
+            "Antonia", "Matías", "Catalina", "Joaquín", "Valentina", "Diego", "Josefa", "Lucas", "Emilia", "Maximiliano",
+            "Javiera", "Cristóbal", "Fernanda", "Ignacio", "Constanza", "Gaspar", "Amanda", "Felipe", "Trinidad", "Nicolás",
+            "Renata", "Alonso", "Maite", "Bastián", "Julieta", "Sebastián", "Rocío", "Gabriel", "Pía", "Andrés", "Camila",
+            "Pablo", "Laura", "Simón", "Elisa", "Hugo", "Ana"];
+        let joinedNames = [];
+        let joinedIds = [];
+
+        function resetJoined() {
+            joinedNames = [];
+            joinedIds = [];
+            document.getElementById('joined-list').innerHTML = '';
+            updateJoined();
+        }
+
+        function updateJoined() {
+            const total = state.classSize || 0;
+            const n = joinedNames.length;
+            document.getElementById('joined-n').textContent = n;
+            document.getElementById('joined-total').textContent = total;
+            document.getElementById('joined-bar').style.width = (total ? Math.min(100, n / total * 100) : 0) + '%';
+            const hint = document.getElementById('qr-hint');
+            const allIn = total > 0 && n >= total;
+            hint.textContent = allIn ? 'Everyone has joined! Press Next step.' : 'When everyone has joined, press Next step.';
+            hint.classList.toggle('all-in', allIn);
+            document.getElementById('demo-join').hidden = allIn;
+        }
+
+        // Called for every student who signs up through the QR (today: the prototype button)
+        function studentJoined(name, id) {
+            joinedNames.push(name);
+            joinedIds.push(id);
+            const li = document.createElement('li');
+            li.textContent = name;
+            document.getElementById('joined-list').appendChild(li);
+            updateJoined();
+            showToast('✓ ' + name + ' joined (' + joinedNames.length + ' of ' + state.classSize + ')', true);
+        }
+
+        document.getElementById('demo-join').onclick = () => {
+            // Prototype: a simulated student signs up exactly like a phone would
+            if (joinedNames.length < state.classSize) store.push(sp('students'), { name: SAMPLE_NAMES[joinedNames.length % SAMPLE_NAMES.length], t: Date.now(), simulated: true });
+        };
+        document.getElementById('setup-next').addEventListener('click', () => {
+            const key = [state.activity.name, state.scenario, state.level, state.classSize].join('|');
+            if (key !== sessionKey || !sessionCode) { sessionKey = key; resetJoined(); newSession(); }
+        });
+        document.getElementById('qr-next').onclick = () => {
+            if (isPlanning()) { buildTeams(); goTo('teams'); }
+            else { buildRoleGroups(); goTo('rounds'); }
+        };
+
+        // ---------- Role-play: groups, participant numbers and role cards ----------
+        // Joined students are shuffled into the groups; Participant N of a group gets role N of the scenario.
+        function buildRoleGroups() {
+            const people = joinedNames.map((name, i) => ({ name, id: joinedIds[i] }));
+            for (let i = people.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [people[i], people[j]] = [people[j], people[i]];
+            }
+            let k = 0;
+            const groups = state.groups.map(size => Array.from({ length: size }, (_, p) => {
+                const who = people[k++];
+                return who ? { id: who.id, name: who.name, p: p + 1 } : null;
+            }).filter(Boolean));
+            // Sent as text: Firebase drops empty seats from lists
+            publish('rp', JSON.stringify({
+                scenario: state.scenario,
+                groups,
+                roles: ROLES[state.scenario] || [],
+                prep: ROLE_PREP,
+                pairs: PAIRS_BY_GROUP_SIZE
+            }));
+            state.rpStarted = {};
+        }
+
+        // ---------- Teams (Planning): fixed for the whole activity ----------
+
+        // Joined students are shuffled and placed in the groups of the matrix;
+        // seats for students who have not joined yet show "Waiting for student N".
+        function buildTeams() {
+            const people = joinedNames.map((name, i) => ({ name, id: joinedIds[i] }));
+            for (let i = people.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [people[i], people[j]] = [people[j], people[i]];
+            }
+            let k = 0;
+            const seats = state.groups.map(size => Array.from({ length: size }, () => {
+                k++;
+                return people[k - 1] || null;
+            }));
+            state.teams = seats.map(team => team.map(p => p ? p.name : null));
+            // Phones find their team by their id (saved as text: Firebase drops empty seats from lists)
+            publish('teams', JSON.stringify(seats.map(team => team.filter(Boolean))));
+            const list = document.getElementById('teams-list');
+            list.innerHTML = '';
+            let seat = 0;
+            state.teams.forEach((team, i) => {
+                const card = document.createElement('div');
+                card.className = 'team';
+                const h = document.createElement('h3');
+                h.textContent = 'Team ' + (i + 1);
+                const ul = document.createElement('ul');
+                team.forEach(name => {
+                    seat++;
+                    const li = document.createElement('li');
+                    li.textContent = name || 'Waiting for student ' + seat;
+                    if (!name) li.className = 'waiting';
+                    ul.appendChild(li);
+                });
+                card.append(h, ul);
+                list.appendChild(card);
+            });
+        }
+        document.getElementById('teams-shuffle').onclick = () => {
+            if (joinedNames.length < 2) { showToast('Shuffling needs at least 2 students who have joined.'); return; }
+            buildTeams();
+            const list = document.getElementById('teams-list');
+            list.classList.remove('shuffled'); void list.offsetWidth; list.classList.add('shuffled');
+            showToast('Teams shuffled!');
+        };
+        document.getElementById('teams-next').onclick = () => { buildTopics(); goTo('topics'); };
+
+        // ---------- Discussion topics (Planning) ----------
+        // From MATRIX_Planning_Discussions.xlsx: [A1–A2 prompt, B1+ prompt, plans where it fits (1/0, in PLANS order)]
+        const TOPICS = [
+            ["Time and place", "Location, venue and schedule",   [1,1,1,1,1,1,1,1,1,1,1,1,1]],
+            ["Clothes", "Attire / dress code",                    [1,1,1,1,1,1,1,1,0,0,0,0,1]],
+            ["Food and drinks", "Catering and menu",              [1,1,1,1,1,1,1,1,1,1,0,0,1]],
+            ["Transportation", "Transportation and logistics",     [1,1,1,1,1,1,1,0,1,0,1,0,1]],
+            ["How much money?", "Budget and expenses",            [1,1,1,1,1,1,1,1,1,1,1,1,1]],
+            ["Decoration", "Theme and decor",                     [0,0,1,0,0,0,1,1,0,1,0,0,1]],
+            ["Music", "Entertainment and playlist",               [1,1,1,1,0,0,1,1,0,1,0,0,1]],
+            ["Who comes?", "Guest list and invitations",          [1,1,1,0,1,1,1,1,0,1,1,1,1]],
+            ["People in charge", "Roles and responsibilities",      [0,1,1,0,1,1,1,1,0,1,1,1,1]],
+            ["Special activities", "Agenda and itinerary",            [1,1,1,1,1,1,1,1,1,1,1,1,1]],
+            ["Possible problems?", "Contingency plan (plan B)",    [1,1,1,1,1,1,1,1,1,1,1,1,1]],
+            ["What do we need?", "Supplies and equipment",        [0,1,1,0,1,1,1,1,0,1,1,1,1]]
+        ];
+        let topicMode = 'manual';
+        let topicsAvailable = [];
+        let topicsSent = [];
+
+        function buildTopics() {
+            const planIndex = PLANS.indexOf(state.scenario);
+            const level = state.level === 'A1–A2' ? 0 : 1;
+            topicsAvailable = TOPICS.filter(t => t[2][planIndex]).map(t => t[level]);
+            topicsSent = [];
+            publish('topic', null);
+            const list = document.getElementById('topics-manual');
+            list.innerHTML = '';
+            topicsAvailable.forEach(topic => {
+                const btn = document.createElement('button');
+                btn.className = 'topic-btn';
+                btn.textContent = topic;
+                btn.onclick = () => sendTopic(topic, true);
+                list.appendChild(btn);
+            });
+            const now = document.getElementById('topic-now');
+            now.className = 'now';
+            now.textContent = 'No topic sent yet';
+            updateShuffleLeft();
+        }
+
+        // Sends the topic to every phone. visible = also shown on this (projected) screen.
+        function sendTopic(topic, visible) {
+            if (!topicsSent.includes(topic)) topicsSent.push(topic);
+            publish('topic', { text: topic, visible, n: topicsSent.length });
+            const now = document.getElementById('topic-now');
+            if (visible) {
+                now.className = 'now live';
+                now.textContent = 'Now discussing: ' + topic;
+            } else {
+                now.className = 'now hidden-topic';
+                now.textContent = '🤫 Topic ' + topicsSent.length + ' is on your phones. Check it out!';
+            }
+            document.querySelectorAll('.topic-btn').forEach(b => b.classList.toggle('sent', topicsSent.includes(b.textContent)));
+            updateShuffleLeft();
+            showToast('Sent to all phones', true);
+        }
+
+        function updateShuffleLeft() {
+            const left = topicsAvailable.filter(t => !topicsSent.includes(t)).length;
+            document.getElementById('shuffle-left').textContent = left + ' of ' + topicsAvailable.length + ' topics left';
+            document.getElementById('topic-shuffle').disabled = left === 0;
+        }
+
+        document.getElementById('topic-shuffle').onclick = () => {
+            const left = topicsAvailable.filter(t => !topicsSent.includes(t));
+            if (left.length) sendTopic(left[Math.floor(Math.random() * left.length)], false);
+        };
+        document.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => {
+            document.querySelectorAll('.mode-btn').forEach(b => b.setAttribute('aria-checked', 'false'));
+            btn.setAttribute('aria-checked', 'true');
+            document.querySelectorAll('.mode-btn').forEach(b => b.setAttribute('aria-selected', b === btn ? 'true' : 'false'));
+            topicMode = btn.dataset.mode;
+            document.getElementById('tab-help').textContent = topicMode === 'manual'
+                ? 'Tap a topic to send it. Everyone sees it on the screen and on their phones.'
+                : 'The app picks a topic for you. Students see it only on their phones.';
+            document.getElementById('topics-manual').hidden = topicMode !== 'manual';
+            document.getElementById('same-row').hidden = topicMode !== 'shuffle';
+            document.getElementById('topics-shuffle').hidden = topicMode !== 'shuffle';
+        });
+        document.getElementById('topics-next').onclick = () => goTo('rounds');
+        document.getElementById('same-switch').onclick = () => {
+            sameTopic = !sameTopic;
+            document.getElementById('same-switch').setAttribute('aria-checked', String(sameTopic));
+            document.getElementById('same-state').textContent = sameTopic ? 'On' : 'Off';
+        };
+
+        // ---------- Rounds: one per screen ----------
+
+        const clock = { interval: null, seconds: 120, minutes: 2 };
+
+        function startRounds() {
+            if (isPlanning()) {
+                // One round per allowed aspect. Base order: topics already sent first, then the rest
+                // (shuffled in Shuffle mode). Team t gets base[(t + round - 1) % n], so teams rotate.
+                let rest = topicsAvailable.filter(t => !topicsSent.includes(t));
+                if (topicMode === 'shuffle') rest = rest.sort(() => Math.random() - 0.5);
+                state.aspects = topicsSent.concat(rest);
+                state.totalRounds = state.aspects.length;
+                state.aspectsSent = {};
+                state.round = 1;   // Planning has no preparation screen
+                publish('round', null);
+                renderRound();
+                return;
+            }
+            const lookup = Math.max(4, Math.min(7, Math.min(...state.groups)));
+            state.totalRounds = ROUNDS_BY_GROUP_SIZE[lookup] || 3;
+            state.pairs = PAIRS_BY_GROUP_SIZE[lookup] || PAIRS_BY_GROUP_SIZE[4];
+            state.round = 0;   // 0 = preparation screen, before round 1
+            renderRound();
+        }
+
+        function fmt(sec) { return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+
+        function stopClock() {
+            clearInterval(clock.interval);
+            clock.interval = null;
+        }
+
+        // Names come from the QR sign-up once phones are connected; until then, "Participant N"
+        const participantNames = {};
+        function participant(n) { return participantNames[n] || 'Participant ' + n; }
+
+        // "P1-P3 / (P5-P6-P7)" → ["Participant 1 & Participant 3", "Participant 5, Participant 6 & Participant 7"]
+        function pairLines(text) {
+            return text.split('/').map(g => {
+                const names = g.replace(/[()\s]/g, '').split('-').map(x => participant(parseInt(x.slice(1), 10)));
+                return names.length > 2 ? names.slice(0, -1).join(', ') + ' & ' + names[names.length - 1] : names.join(' & ');
+            });
+        }
+
+        function part(help, ...children) {
+            const p = document.createElement('div');
+            p.className = 'part';
+            p.append(...children);
+            if (help) {
+                const w = document.createElement('span');
+                w.className = 'info-wrap';
+                w.appendChild(makeInfo(help.title, help, { inline: true }));
+                p.appendChild(w);
+            }
+            return p;
+        }
+
+        // Manually: all teams get the same aspect. At random: same (switch On) or a different one per team, rotating
+        let sameTopic = false;
+        function allSame() { return topicMode === 'manual' || sameTopic; }
+        function aspectFor(team, round) {
+            const n = state.aspects.length;
+            if (allSame()) return state.aspects[(round - 1) % n];
+            return state.aspects[(team + round - 1) % n];
+        }
+
+        // Bottom of the Planning timer card: a reminder instead of the pairs
+        function aspectPart() {
+            const box = document.createElement('div');
+            box.className = 'pairs';
+            box.id = 'aspect-box';
+            fillAspectBox(box);
+            return box;
+        }
+        function fillAspectBox(box) {
+            box.innerHTML = '<small>Plan together</small>';
+            const msg = document.createElement('b');
+            msg.className = 'reminder';
+            const sent = state.aspectsSent[state.round];
+            msg.textContent = sent ? 'Discuss and plan the aspect on your phone.' : 'Press START to send each team its aspect.';
+            box.appendChild(msg);
+            // Teacher picks: the projected screen also shows which team plans what
+            // The projector shows the aspect only in Manual mode (At random: phones only)
+            if (sent && topicMode === 'manual') {
+                const one = document.createElement('div');
+                one.className = 'aspect-list';
+                one.textContent = 'All teams: ' + aspectFor(0, state.round);
+                box.appendChild(one);
+            }
+        }
+
+        // ---------- Plan reports (Planning) ----------
+        const reportBtn = document.getElementById('request-reports');
+        document.getElementById('report-info').appendChild(makeInfo('plan reports', {
+            title: 'Request plan reports',
+            text: 'Ends the activity. Each team reports its plan by voice.'
+        }, { inline: true }));
+        let confirmTimer = null;
+        function resetReportBtn() {
+            reportBtn.classList.remove('confirm');
+            reportBtn.querySelector('.report-label').textContent = 'Request plan reports';
+            reportBtn.querySelector('small').textContent = '';
+        }
+        // First tap asks to confirm (no browser pop-up); a second tap within 4 s sends the request
+        reportBtn.onclick = () => {
+            if (!reportBtn.classList.contains('confirm')) {
+                reportBtn.classList.add('confirm');
+                reportBtn.querySelector('.report-label').textContent = 'Tap again to confirm';
+                reportBtn.querySelector('small').textContent = 'The rounds end and phones open the microphone.';
+                clearTimeout(confirmTimer);
+                confirmTimer = setTimeout(resetReportBtn, 4000);
+                return;
+            }
+            clearTimeout(confirmTimer);
+            resetReportBtn();
+            openReports();
+        };
+
+        // Raw speech-to-text, shown exactly as transcribed: mistakes and odd words included, never corrected
+        const SAMPLE_REPORTS = [
+            "we go to the cinema in saturday at seven we take the bus and we have twenty dollar each one",
+            "our plan is a picnic in the park on sunday we bring sandwich and juice and if it rain we go to my house um",
+            "we want go to a concert friday night we were jeans and t-shirt and we go buy metro",
+            "the plan is a dinner in italian restaurant it cost about fifteen dollars and we invite to friends",
+            "we going to the beach the weekend we share the car and we take games and music and uh sunscream"
+        ];
+        let reports = [];
+        let showNames = false;   // teams are anonymous by default; the teacher can reveal names
+
+        document.getElementById('toggle-names').onclick = () => {
+            showNames = !showNames;
+            const b = document.getElementById('toggle-names');
+            b.textContent = showNames ? '🙈 Hide team names' : '👁 Show team names';
+            b.setAttribute('aria-pressed', String(showNames));
+            renderReports();
+        };
+
+        function openReports() {
+            stopClock();
+            reports = state.teams.map(() => null);
+            renderReports.lastDone = 0;
+            publish('reports', null);
+            showNames = false;
+            document.getElementById('toggle-names').textContent = '👁 Show team names';
+            document.getElementById('toggle-names').setAttribute('aria-pressed', 'false');
+            renderReports();
+            goTo('reports');
+            showToast('Report request sent to every phone', true);
+        }
+
+        function renderReports() {
+            const done = reports.filter(Boolean).length;
+            renderReports.lastDone = done;
+            document.getElementById('report-count').textContent = done + ' of ' + reports.length + ' teams have reported';
+            const list = document.getElementById('report-list');
+            list.innerHTML = '';
+            reports.forEach((text, t) => {
+                const card = document.createElement('div');
+                card.className = 'report ' + (text ? 'done' : 'waiting');
+                const h = document.createElement('h3');
+                h.textContent = 'Team ' + (t + 1);
+                const st = document.createElement('span');
+                st.className = 'status';
+                st.textContent = text ? '✓ Received' : '🎤 Recording…';
+                h.appendChild(st);
+                card.appendChild(h);
+                if (showNames) {
+                    const who = document.createElement('div');
+                    who.className = 'members';
+                    who.textContent = state.teams[t].map((n, i) => n || 'Student ' + (i + 1)).join(' · ');
+                    card.appendChild(who);
+                }
+                const p = document.createElement('p');
+                p.textContent = text ? '“' + text + '”' : 'Waiting for the voice report';
+                card.appendChild(p);
+                list.appendChild(card);
+            });
+            document.getElementById('demo-report').hidden = done === reports.length;
+        }
+
+        document.getElementById('demo-report').onclick = () => {
+            const t = reports.findIndex(x => !x);
+            if (t < 0) return;
+            // Prototype: a simulated team reports exactly like a phone would (one report per team)
+            store.claim(sp('reports/t' + t), { text: SAMPLE_REPORTS[t % SAMPLE_REPORTS.length], by: state.teams[t].find(Boolean) || 'Student', t: Date.now() });
+        };
+        document.getElementById('reports-back').onclick = () => goTo('rounds', true);
+
+        function renderRound() {
+            stopClock();
+            document.getElementById('report-wrap').hidden = !isPlanning();
+            resetReportBtn();
+            clock.seconds = clock.minutes * 60;
+            const prep = state.round === 0;
+            document.getElementById('prep-title').hidden = !prep;
+            // Role-play: phones show the role card (preparation) or wait for START to show their partner
+            if (!isPlanning()) publish('round', { n: state.round, total: state.totalRounds, started: !!(state.rpStarted || {})[state.round] });
+            document.getElementById('round-tag').textContent = (state.scenario || '') + ' · ' +
+                (prep ? 'Preparation' : 'Round ' + state.round + ' of ' + state.totalRounds);
+            const card = document.getElementById('round-card');
+            card.innerHTML = '';
+
+            const h = document.createElement('h3');
+            h.textContent = prep ? 'Preparation' : 'Round ' + state.round;
+
+            const minutes = document.createElement('label');
+            minutes.className = 'minutes';
+            const input = document.createElement('input');
+            input.type = 'number'; input.min = 1; input.max = 5; input.value = clock.minutes;
+            const span = document.createElement('span');
+            span.textContent = 'min';
+            minutes.append(input, span);
+
+            const display = document.createElement('div');
+            display.className = 'timer';
+            display.setAttribute('role', 'timer');
+            display.textContent = fmt(clock.seconds);
+
+            const controls = document.createElement('div');
+            controls.className = 'controls';
+            const start = document.createElement('button');
+            start.className = 'start';
+            start.textContent = 'Start';
+            const next = document.createElement('button');
+            next.className = 'next';
+            next.textContent = prep ? 'Go to rounds' : state.round < state.totalRounds ? 'Next' : 'Finish';
+            const reset = document.createElement('button');
+            reset.className = 'reset';
+            reset.textContent = 'Reset';
+            controls.append(start, next, reset);
+
+            const pairs = document.createElement('div');
+            pairs.className = 'pairs';
+            pairs.innerHTML = '<small>Pairs distribution</small>';
+            const ul = document.createElement('ul');
+            pairLines(state.pairs[state.round - 1] || '').forEach(line => {
+                const li = document.createElement('li');
+                li.textContent = line;
+                ul.appendChild(li);
+            });
+            pairs.appendChild(ul);
+
+            input.onchange = () => {
+                const m = Math.max(1, Math.min(5, parseInt(input.value, 10) || 2));
+                input.value = m;
+                clock.minutes = m;
+                if (!clock.interval) {
+                    clock.seconds = m * 60;
+                    display.textContent = fmt(clock.seconds);
+                    display.classList.remove('done');
+                    start.disabled = false;
+                }
+            };
+            start.onclick = () => {
+                if (!isPlanning() && !(state.rpStarted || {})[state.round]) {
+                    state.rpStarted = state.rpStarted || {};
+                    state.rpStarted[state.round] = true;
+                    publish('round/started', true);
+                    showToast(prep ? 'Preparation questions sent to every phone' : 'Round ' + state.round + ': partners sent to every phone', true);
+                }
+                if (isPlanning() && !state.aspectsSent[state.round]) {
+                    state.aspectsSent[state.round] = true;
+                publish('round', { n: state.round, total: state.totalRounds, plan: state.scenario,
+                    aspects: state.teams.map((_, t) => aspectFor(t, state.round)) });
+                    fillAspectBox(document.getElementById('aspect-box'));
+                    showToast('Round ' + state.round + ': aspects sent to every team', true);
+                }
+                if (clock.interval) {
+                    stopClock();
+                    start.textContent = 'Start';
+                    start.classList.remove('running');
+                    return;
+                }
+                start.textContent = 'Pause';
+                start.classList.add('running');
+                clock.interval = setInterval(() => {
+                    clock.seconds--;
+                    if (clock.seconds <= 0) {
+                        stopClock();
+                        display.textContent = 'TIME!';
+                        // Every phone gets a "Time's up" alert
+                        publish('timeup', { round: state.round, at: Date.now() });
+                        display.classList.add('done');
+                        start.textContent = 'Start';
+                        start.classList.remove('running');
+                        start.disabled = true;
+                        return;
+                    }
+                    display.textContent = fmt(clock.seconds);
+                }, 1000);
+            };
+            reset.onclick = () => {
+                stopClock();
+                clock.seconds = clock.minutes * 60;
+                display.textContent = fmt(clock.seconds);
+                display.classList.remove('done');
+                start.textContent = 'Start';
+                start.classList.remove('running');
+                start.disabled = false;
+            };
+            next.onclick = () => {
+                if (state.round < state.totalRounds) { state.round++; renderRound(); }
+                else goTo('end');
+            };
+
+            card.append(h, part(HELP.time, minutes, display), part(HELP.controls, controls));
+            if (isPlanning()) card.append(part(HELP.aspect, aspectPart()));
+            else if (!prep) card.append(part(HELP.pairs, pairs));
+        }
+
+        // Back from the end screen: return to the last round, not to the start of the rounds
+        document.getElementById('end-back').onclick = () => goTo('rounds', true);
+
+        document.getElementById('rounds-back').onclick = () => {
+            if (isPlanning() && state.round === 1) goTo('topics');
+            else if (state.round > (isPlanning() ? 1 : 0)) { state.round--; renderRound(); }
+            else goTo('qr');
+        };
+
+        // ---------- Global bubble behavior ----------
 
         // Keep the bubble open while the mouse is over it (to reach the tutorial button)
         bubble.addEventListener('mouseenter', () => clearTimeout(hideTimer));
@@ -331,8 +2042,20 @@
         document.addEventListener('click', (e) => {
             if (openCard && !bubble.contains(e.target) && !openCard.contains(e.target)) closeBubble();
         });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeBubble(); });
-        window.addEventListener('resize', () => { if (openCard) positionBubble(openCard); });
+        // Escape closes the bubble first, then the open cluster
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (openCard) closeBubble();
+            else if (openCluster !== null && !document.getElementById('screen-welcome').hidden) {
+                const btn = clusterCards[openCluster].querySelector('button');
+                closeCluster();
+                btn.focus();
+            }
+        });
+        window.addEventListener('resize', () => {
+            placePanel();
+            if (openCard) positionBubble(openCard);
+        });
     </script>
 </body>
 </html>
