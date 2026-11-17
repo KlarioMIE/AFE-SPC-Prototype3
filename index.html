@@ -218,6 +218,26 @@
         .fake-door { opacity: 0.45; filter: saturate(0.35); }
         .fake-door:hover, .fake-door:focus-visible { opacity: 0.6; }
 
+        /* ---------- Student calls (on every screen, oldest first) ---------- */
+        .calls {
+            position: fixed; top: 5.5rem; right: 1rem; z-index: 25;
+            display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;
+        }
+        .calls[hidden] { display: none; }
+        .call-item {
+            display: flex; align-items: center; gap: 0.75rem;
+            background: #fde047; color: #000;
+            border: 3px solid #000; border-radius: 1rem; box-shadow: 4px 4px 0 #000;
+            padding: 0.6rem 0.7rem 0.6rem 1rem;
+            font-weight: 900; font-size: 1.15rem;
+            animation: ring 1s ease-in-out 3;
+        }
+        .call-item button {
+            font-family: inherit; font-weight: 900; font-size: 0.9rem;
+            background: #fff; border: 2px solid #000; border-radius: 0.6rem; padding: 0.3rem 0.6rem; cursor: pointer;
+        }
+        @keyframes ring { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+
         /* Short message for fake doors */
         .toast {
             position: fixed;
@@ -826,6 +846,8 @@
 
     <div id="bubble" class="bubble" role="tooltip"></div>
     <div id="toast" class="toast" role="status"></div>
+    <!-- Students who press "Call teacher" on their phone: team number only, oldest first -->
+    <div class="calls" id="calls" aria-live="assertive" hidden></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
@@ -912,6 +934,25 @@
         const sp = path => 'sessions/' + sessionCode + (path ? '/' + path : '');
         function publish(path, val) { if (sessionCode) store.set(sp(path), val); }
 
+        // Calls from the phones: shown on every screen until the teacher marks them as done
+        function renderCalls(calls) {
+            const box = document.getElementById('calls');
+            box.innerHTML = '';
+            const list = Object.entries(calls).sort((a, b) => a[1].t - b[1].t);
+            list.forEach(([id, c]) => {
+                const item = document.createElement('div');
+                item.className = 'call-item';
+                const who = c.team >= 0 ? 'Team ' + (c.team + 1) : 'A student';
+                item.append('✋ ' + who + ' is calling you');
+                const done = document.createElement('button');
+                done.textContent = '✓ Done';
+                done.onclick = () => publish('calls/' + id, null);
+                item.appendChild(done);
+                box.appendChild(item);
+            });
+            box.hidden = !list.length;
+        }
+
         // Student page address for the QR: next to this page (works once both are published on https)
         function studentLink() {
             const url = new URL('student.html', location.href);
@@ -939,6 +980,7 @@
                 className: 'warn-local', textContent: 'Phones are not connected yet: use the prototype button below to simulate students.' }));
             const seen = new Set();
             const code0 = sessionCode;
+            renderCalls({});
             store.watch(sp('students'), students => {
                 if (code0 !== sessionCode || !students) return;
                 Object.entries(students).sort((a, b) => a[1].t - b[1].t).forEach(([id, st]) => {
@@ -946,6 +988,10 @@
                     seen.add(id);
                     studentJoined(st.name, id);
                 });
+            });
+            store.watch(sp('calls'), calls => {
+                if (code0 !== sessionCode) return;
+                renderCalls(calls || {});
             });
             store.watch(sp('reports'), r => {
                 if (code0 !== sessionCode || !reports.length) return;

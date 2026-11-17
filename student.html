@@ -605,6 +605,8 @@
             if (!live.me) { go('s-join'); return; }
             if (!students[live.me]) { go('s-wait'); return; }   // just joined: the sign-up is on its way
             myName = students[live.me].name;
+            // The call stays on until the student cancels it or the teacher marks it as done
+            setCall(!!(s.calls && s.calls[live.me]));
             $('who').textContent = myName;
             let teams = [];
             try { teams = JSON.parse(s.teams || '[]'); } catch (e) { teams = []; }
@@ -678,10 +680,18 @@
         };
 
         // ---------- Call teacher (global) ----------
+        function setCall(on) {
+            $('call').classList.toggle('on', on);
+            $('call').textContent = on ? '✋ Calling… Tap to cancel' : '✋ Call teacher';
+        }
         $('call').onclick = () => {
             const on = !$('call').classList.contains('on');
-            $('call').classList.toggle('on', on);
-            $('call').textContent = on ? '✋ Teacher is coming… (tap to cancel)' : '✋ Call teacher';
+            setCall(on);
+            if (live.code && live.me && store) {
+                // The teacher's screen shows the call with the team number only (no name)
+                store.set(live.path('calls/' + live.me), on ? { t: Date.now(), team: live.team } : null);
+                return;
+            }
             if (on) toast('Your teacher got your call');
         };
 
