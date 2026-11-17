@@ -580,6 +580,15 @@
             background: #fef9c3; border: 3px solid #000; border-radius: 1.5rem;
             box-shadow: 6px 6px 0 #000; padding: 1.25rem 1.5rem 1.5rem;
         }
+        .same-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.6rem; margin: 0 0 1rem; font-weight: 900; font-size: 1.1rem; }
+        .same-row[hidden] { display: none; }
+        .same-btn {
+            font-family: inherit; font-size: 1rem; font-weight: 900; cursor: pointer;
+            background: #fff; color: #000; border: 3px solid #000; border-radius: 999px;
+            box-shadow: 0 4px 0 #000; padding: 0.45rem 1rem;
+        }
+        .same-btn:focus-visible { outline: 4px solid #2563eb; outline-offset: 3px; }
+        .same-btn[aria-checked="true"] { background: #000; color: #fde047; transform: translateY(3px); box-shadow: 0 1px 0 #000; }
         .tab-help { margin: 0 0 1rem; font-size: 1.1rem; font-weight: 700; color: #334155; text-align: center; }
         .now {
             text-align: center; font-size: clamp(1.4rem, 3.5vw, 2.4rem); font-weight: 900;
@@ -772,6 +781,12 @@
                     <button class="mode-btn" role="tab" aria-selected="false" aria-checked="false" data-mode="shuffle" aria-controls="topics-panel">🔀 At random</button>
                 </div>
                 <div class="tab-panel" id="topics-panel" role="tabpanel">
+                    <!-- Manual mode: the teacher decides if all teams plan the same aspect or different ones -->
+                    <div class="same-row" id="same-row" role="radiogroup" aria-label="Topics for the teams">
+                        <span>Each team gets:</span>
+                        <button class="same-btn" role="radio" aria-checked="true" data-same="0">🔀 A different topic</button>
+                        <button class="same-btn" role="radio" aria-checked="false" data-same="1">🟰 The same topic</button>
+                    </div>
                     <p class="tab-help" id="tab-help">Tap a topic to send it. Everyone sees it on the screen and on their phones.</p>
                     <div class="now" id="topic-now">No topic sent yet</div>
                     <div id="topics-manual" class="topic-list"></div>
@@ -1095,7 +1110,7 @@
         const HELP = {
             time: { title: "Round time", text: "Set the minutes for this round, then press START. You can pause and change the time before starting again." },
             controls: { title: "Start, Next and Reset", text: "START runs the clock (press again to pause). NEXT ends this round and moves on. RESET puts the clock back to the time you set." },
-            aspect: { title: "Aspect to plan", text: "When you press START, each team gets one aspect of the plan on their phone. Teams get a different aspect every round, so not all teams talk about the same thing." },
+            aspect: { title: "Aspect to plan", text: "When you press START, each team gets one aspect of the plan on their phone. In Manual mode you choose if all teams get the same aspect or a different one." },
             pairs: { title: "Pairs", text: "In every group, these participants talk to each other this round. Each student sees their participant number on their phone." }
         };
 
@@ -1630,9 +1645,14 @@
                 ? 'Tap a topic to send it. Everyone sees it on the screen and on their phones.'
                 : 'The app picks a topic for you. Students see it only on their phones.';
             document.getElementById('topics-manual').hidden = topicMode !== 'manual';
+            document.getElementById('same-row').hidden = topicMode !== 'manual';
             document.getElementById('topics-shuffle').hidden = topicMode !== 'shuffle';
         });
         document.getElementById('topics-next').onclick = () => goTo('rounds');
+        document.querySelectorAll('.same-btn').forEach(btn => btn.onclick = () => {
+            document.querySelectorAll('.same-btn').forEach(b => b.setAttribute('aria-checked', String(b === btn)));
+            sameTopic = btn.dataset.same === '1';
+        });
 
         // ---------- Rounds: one per screen ----------
 
@@ -1691,8 +1711,12 @@
             return p;
         }
 
+        // Same topic for all teams (manual mode only) or a different one per team, rotating
+        let sameTopic = false;
+        function allSame() { return sameTopic && topicMode === 'manual'; }
         function aspectFor(team, round) {
             const n = state.aspects.length;
+            if (allSame()) return state.aspects[(round - 1) % n];
             return state.aspects[(team + round - 1) % n];
         }
 
@@ -1712,7 +1736,12 @@
             msg.textContent = sent ? 'Discuss and plan the aspect on your phone.' : 'Press START to send each team its aspect.';
             box.appendChild(msg);
             // Teacher picks: the projected screen also shows which team plans what
-            if (sent && topicMode === 'manual') {
+            if (sent && allSame()) {
+                const one = document.createElement('div');
+                one.className = 'aspect-list';
+                one.textContent = 'All teams: ' + aspectFor(0, state.round);
+                box.appendChild(one);
+            } else if (sent && topicMode === 'manual') {
                 const ul = document.createElement('ul');
                 ul.className = 'aspect-list';
                 state.teams.forEach((_, t) => {

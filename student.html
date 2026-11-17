@@ -550,6 +550,9 @@
         $('send').onclick = () => {
             $('send-row').hidden = true;
             $('confirm').hidden = false;
+            // The question can be below the fold on small phones: bring it into view
+            $('confirm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            $('confirm-yes').focus({ preventScroll: true });
         };
         $('confirm-no').onclick = () => {
             $('confirm').hidden = true;
